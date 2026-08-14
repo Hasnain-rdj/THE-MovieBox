@@ -1,0 +1,10 @@
+# Backend Dependencies & Builds
+node_modules/
+dist/
+
+# Env & Secrets
+.env
+.env.local
+
+# Logs
+*.log

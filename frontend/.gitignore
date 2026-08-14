@@ -1,0 +1,13 @@
+# Frontend Dependencies & Next.js Builds
+node_modules/
+.next/
+out/
+build/
+
+# Env & Secrets
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
