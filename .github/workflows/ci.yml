@@ -1,0 +1,72 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build-frontend:
+    name: Build Frontend (Next.js)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: './frontend/package-lock.json'
+
+      - name: Install & Build Frontend
+        working-directory: ./frontend
+        run: |
+          npm install
+          npm run build
+
+  build-auth-service:
+    name: Build & Test Auth Service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: './auth-service/package-lock.json'
+
+      - name: Install, Build & Test Auth Service
+        working-directory: ./auth-service
+        run: |
+          npm install
+          npm run build
+          npm test
+
+  build-movie-service:
+    name: Build & Test Movie Service
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js 18
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: 'npm'
+          cache-dependency-path: './movie-service/package-lock.json'
+
+      - name: Install, Build & Test Movie Service
+        working-directory: ./movie-service
+        run: |
+          npm install
+          npm run build
+          npm test
