@@ -10,7 +10,6 @@ const OMDB_API_KEY = process.env.OMDB_API_KEY || 'f4dc3b7f';
 const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 const BACKDROP_BASE_URL = 'https://image.tmdb.org/t/p/original';
 
-// Fallback curated dataset for high availability
 const FALLBACK_MOVIES = [
   {
     id: 550,
@@ -41,16 +40,6 @@ const FALLBACK_MOVIES = [
     poster: 'https://image.tmdb.org/t/p/w500/or06FN3Dka5tukK1e9vKoWRotio.jpg',
     backdrop: 'https://image.tmdb.org/t/p/original/7RyHsO4yDXtBv1zUU3mTpHeQ0d5.jpg',
     overview: 'After the devastating events of Avengers: Infinity War, the universe is in ruins.',
-  },
-  {
-    id: 693134,
-    title: 'Dune: Part Two',
-    rating: 8.5,
-    voteCount: 5000,
-    releaseDate: '2024-02-27',
-    poster: 'https://image.tmdb.org/t/p/w500/1pdfLPoWuVzhWStAimjMtBDfCio.jpg',
-    backdrop: 'https://image.tmdb.org/t/p/original/xOMo8WhUZK2vccA2GlR4zGvJvWB.jpg',
-    overview: 'Paul Atreides unites with Chani and the Fremen while seeking revenge against the conspirators who destroyed his family.',
   },
 ];
 
@@ -184,7 +173,6 @@ export const getTMDBMovieDetails = async (
       return { ...response.data, mediaType: 'movie' };
     }
 
-    // If type is not explicitly specified, query both concurrently and choose the one with higher popularity / vote count
     const [movieRes, tvRes] = await Promise.allSettled([
       tmdbClient.get(`/movie/${movieId}`, {
         params: {

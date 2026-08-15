@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { API_BASE_URL } from "@/config";
+import { FAVORITE_API_URL } from "@/config";
 import { Heart, Trash2, Star, Calendar, ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -33,10 +33,22 @@ export default function FavoritesPage() {
     }
 
     try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        localStorage.removeItem("moviebox_user");
+        localStorage.removeItem("moviebox_token");
+        router.push("/");
+        return;
+      }
       setUser(JSON.parse(savedUser));
-    } catch (e) {}
+    } catch (e) {
+      localStorage.removeItem("moviebox_user");
+      localStorage.removeItem("moviebox_token");
+      router.push("/");
+      return;
+    }
 
-    fetch(`${API_BASE_URL}/favorites`, {
+    fetch(`${FAVORITE_API_URL}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : []))
@@ -58,7 +70,7 @@ export default function FavoritesPage() {
     if (!token) return;
 
     try {
-      await fetch(`${API_BASE_URL}/favorites/${movieId}`, {
+      await fetch(`${FAVORITE_API_URL}/${movieId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -96,13 +108,13 @@ export default function FavoritesPage() {
             </div>
           </div>
 
-          <Link
-            href="/"
-            className="hidden sm:inline-flex items-center gap-2 text-xs font-bold text-zinc-400 hover:text-white bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-full"
+          <button
+            onClick={() => router.back()}
+            className="hidden sm:inline-flex items-center gap-2 text-xs font-bold text-zinc-400 hover:text-white bg-zinc-900 border border-zinc-800 px-4 py-2 rounded-full cursor-pointer hover:border-zinc-700"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Dashboard</span>
-          </Link>
+            <span>Back</span>
+          </button>
         </div>
 
         {/* Favorites Grid */}

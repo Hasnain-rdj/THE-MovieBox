@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { API_BASE_URL } from "@/config";
-import { X, Lock, Mail, User as UserIcon, ShieldAlert, CheckCircle2 } from "lucide-react";
+import { AUTH_API_URL } from "@/config";
+import { X, Lock, Mail, User as UserIcon, ShieldAlert, CheckCircle2, Eye, EyeOff } from "lucide-react";
 
 interface AuthModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSuccess: (token: string, user: any) => void;
+  onSuccess: (user: any, token: string) => void;
 }
 
 export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
@@ -15,7 +15,11 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState<"User" | "Admin">("User");
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,10 +33,16 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
     setError(null);
     setSuccessMsg(null);
 
+    if (mode === "register" && password !== confirmPassword) {
+      setError("Passwords do not match. Please try again.");
+      setLoading(false);
+      return;
+    }
+
     const endpoint =
       mode === "login"
-        ? `${API_BASE_URL}/auth/login`
-        : `${API_BASE_URL}/auth/register`;
+        ? `${AUTH_API_URL}/login`
+        : `${AUTH_API_URL}/register`;
 
     const body =
       mode === "login"
@@ -172,15 +182,48 @@ export default function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps
             <div className="relative">
               <Lock className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3" />
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 pl-10 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-500"
+                className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-500"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3.5 top-3 text-zinc-500 hover:text-white transition-colors cursor-pointer"
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
             </div>
           </div>
+
+          {mode === "register" && (
+            <div>
+              <label className="block text-xs font-semibold text-zinc-400 mb-1.5">
+                Confirm Password
+              </label>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3" />
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-500"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3.5 top-3 text-zinc-500 hover:text-white transition-colors cursor-pointer"
+                >
+                  {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+          )}
 
           {mode === "register" && (
             <div>

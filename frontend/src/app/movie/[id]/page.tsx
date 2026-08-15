@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState, use } from "react";
+import { useEffect, useState, use, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { API_BASE_URL } from "@/config";
+import { MOVIE_API_URL, FAVORITE_API_URL } from "@/config";
 import {
   ArrowLeft,
   Star,
@@ -34,10 +34,12 @@ interface MovieDetails {
   trailerUrl: string | null;
 }
 
-export default function MovieDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+function MovieDetailsContent({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const movieId = resolvedParams.id;
+  const mediaType = searchParams.get("type") || undefined;
 
   const [movie, setMovie] = useState<MovieDetails | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -62,7 +64,8 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
   useEffect(() => {
     if (!movieId) return;
     setLoading(true);
-    fetch(`${API_BASE_URL}/movies/${movieId}`)
+    const typeParam = mediaType ? `?type=${mediaType}` : "";
+    fetch(`${MOVIE_API_URL}/${movieId}${typeParam}`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch movie details");
         return res.json();
@@ -83,7 +86,7 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
     const token = localStorage.getItem("moviebox_token");
     if (!token || !movieId) return;
 
-    fetch(`${API_BASE_URL}/favorites`, {
+    fetch(`${FAVORITE_API_URL}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : []))
@@ -97,20 +100,20 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
   const toggleFavorite = async () => {
     const token = localStorage.getItem("moviebox_token");
     if (!token) {
-      router.push("/");
+      alert("Please log in to add movies to your favorites.");
       return;
     }
 
     setFavLoading(true);
     try {
       if (isFavorite) {
-        await fetch(`${API_BASE_URL}/favorites/${movieId}`, {
+        await fetch(`${FAVORITE_API_URL}/${movieId}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         });
         setIsFavorite(false);
       } else {
-        await fetch(`${API_BASE_URL}/favorites`, {
+        await fetch(`${FAVORITE_API_URL}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -162,14 +165,14 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
 
       {/* Main Container */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-        {/* Back Button */}
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-xs font-bold text-zinc-400 hover:text-white transition-colors bg-zinc-900/80 border border-zinc-800 px-4 py-2 rounded-full"
+        {/* Smart Back Button using browser history */}
+        <button
+          onClick={() => router.back()}
+          className="inline-flex items-center gap-2 text-xs font-bold text-zinc-400 hover:text-white transition-colors bg-zinc-900/80 border border-zinc-800 px-4 py-2 rounded-full cursor-pointer hover:border-zinc-700"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Dashboard</span>
-        </Link>
+          <span>Back</span>
+        </button>
 
         {/* Hero Backdrop Banner & Trailer Section */}
         <div className="relative rounded-3xl overflow-hidden border border-zinc-800/80 shadow-2xl bg-zinc-900">
@@ -334,5 +337,17 @@ export default function MovieDetailsPage({ params }: { params: Promise<{ id: str
         )}
       </main>
     </div>
+  );
+}
+
+export default function MovieDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0d0f12] text-white flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <MovieDetailsContent params={params} />
+    </Suspense>
   );
 }

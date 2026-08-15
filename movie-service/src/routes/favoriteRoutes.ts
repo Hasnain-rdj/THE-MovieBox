@@ -10,8 +10,8 @@ const router = Router();
 
 router.use(authenticateJWT);
 
-router.get('/', getFavorites);
 router.post('/', addFavorite);
-router.delete('/:tmdbMovieId', removeFavorite);
+router.get('/', getFavorites);
+router.delete('/:movieId', removeFavorite);
 
 export default router;

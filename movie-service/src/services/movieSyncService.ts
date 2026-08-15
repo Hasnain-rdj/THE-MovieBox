@@ -1,5 +1,5 @@
 import axios from 'axios';
-import MovieCache, { IMovieCache } from '../models/MovieCache.js';
+import MovieCache from '../models/MovieCache.js';
 import { getTMDBMovieDetails } from './tmdbService.js';
 
 const OMDB_BASE_URL = 'https://www.omdbapi.com';
@@ -14,7 +14,6 @@ export const fetchMovieWithMultiSourceFallback = async (
 ): Promise<any> => {
   const numericId = Number(movieId);
 
-  // 1. Check MongoDB Cache first
   try {
     const cached = await MovieCache.findOne({ movieId: numericId });
     if (cached) {
@@ -29,7 +28,6 @@ export const fetchMovieWithMultiSourceFallback = async (
 
   let resultPayload: any = null;
 
-  // 2. Primary Source: TMDB API
   try {
     const tmdbData = await getTMDBMovieDetails(numericId, mediaType);
     if (tmdbData && (tmdbData.title || tmdbData.name)) {
@@ -71,7 +69,6 @@ export const fetchMovieWithMultiSourceFallback = async (
     console.warn(`⚠️ TMDB fetch failed for ID ${numericId}, attempting OMDb API fallback:`, tmdbErr.message);
   }
 
-  // 3. Secondary Source: OMDb API (Fallback)
   if (!resultPayload && searchTitle) {
     try {
       const omdbRes = await axios.get(OMDB_BASE_URL, {
@@ -113,7 +110,6 @@ export const fetchMovieWithMultiSourceFallback = async (
     }
   }
 
-  // 4. Tertiary Source: Search Web Extraction
   if (!resultPayload) {
     resultPayload = {
       movieId: numericId,
@@ -134,7 +130,6 @@ export const fetchMovieWithMultiSourceFallback = async (
     };
   }
 
-  // 5. Persist to MongoDB Cache
   try {
     await MovieCache.findOneAndUpdate(
       { movieId: numericId },

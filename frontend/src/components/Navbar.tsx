@@ -2,13 +2,14 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, Bell, MessageSquare, Film, LogOut, Heart, Layers, LayoutDashboard } from "lucide-react";
+import { Search, Bell, MessageSquare, Film, LogOut, Heart, Layers, LayoutDashboard, User as UserIcon } from "lucide-react";
 
 interface User {
   id: string;
   name: string;
   email: string;
   role: string;
+  avatarUrl?: string;
 }
 
 interface NavbarProps {
@@ -30,6 +31,7 @@ export default function Navbar({
     { href: "/", label: "DASHBOARD", icon: LayoutDashboard },
     { href: "/collections", label: "COLLECTIONS", icon: Layers },
     { href: "/favorites", label: "FAVORITES", icon: Heart },
+    ...(user ? [{ href: "/profile", label: "PROFILE", icon: UserIcon }] : []),
   ];
 
   return (
@@ -103,21 +105,31 @@ export default function Navbar({
         {/* User Auth Profile Badge */}
         {user && (
           <div className="flex items-center gap-3 bg-zinc-900/90 border border-zinc-800/90 pl-1.5 pr-3 py-1 rounded-full shadow-md">
-            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-yellow-400 to-amber-600 flex items-center justify-center font-bold text-xs text-black shadow-sm">
-              {user.name.charAt(0).toUpperCase()}
-            </div>
-            <div className="flex flex-col text-left">
-              <span className="text-xs font-semibold text-white leading-tight truncate max-w-[100px]">
-                {user.name}
-              </span>
-              <span className="text-[10px] text-yellow-400 font-medium">
-                {user.role}
-              </span>
-            </div>
+            <Link href="/profile" className="flex items-center gap-2.5 group cursor-pointer">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-yellow-400 to-amber-600 flex items-center justify-center font-bold text-xs text-black shadow-sm overflow-hidden shrink-0 border border-yellow-400/50">
+                {user.avatarUrl ? (
+                  <img
+                    src={user.avatarUrl}
+                    alt={user.name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  user.name.charAt(0).toUpperCase()
+                )}
+              </div>
+              <div className="flex flex-col text-left">
+                <span className="text-xs font-semibold text-white leading-tight truncate max-w-[100px] group-hover:text-yellow-400 transition-colors">
+                  {user.name}
+                </span>
+                <span className="text-[10px] text-yellow-400 font-medium">
+                  {user.role}
+                </span>
+              </div>
+            </Link>
             <button
               onClick={onLogout}
               title="Logout"
-              className="p-1.5 rounded-full text-zinc-400 hover:text-red-400 hover:bg-zinc-800 transition-all ml-1"
+              className="p-1.5 rounded-full text-zinc-400 hover:text-red-400 hover:bg-zinc-800 transition-all ml-1 cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
             </button>

@@ -30,7 +30,6 @@ const resolveImageUrl = (path: string | null | undefined, base: string): string 
   return `${base}${path.startsWith('/') ? path : '/' + path}`;
 };
 
-// 1. MCU Saga (All Phase 1-5 Movies & TV Series)
 const MCU_ITEMS: CollectionItem[] = [
   { id: 1726, title: 'Iron Man', type: 'movie', overview: 'Tony Stark builds a high-tech suit of armor to escape captivity.', rating: 7.9, releaseDate: '2008-04-30', poster: null, backdrop: null },
   { id: 1724, title: 'The Incredible Hulk', type: 'movie', overview: 'Scientist Bruce Banner searches for a cure to his gamma radiation mutation.', rating: 6.2, releaseDate: '2008-06-12', poster: null, backdrop: null },
@@ -77,7 +76,6 @@ const MCU_ITEMS: CollectionItem[] = [
   { id: 138501, title: 'Agatha All Along', type: 'series', overview: 'Agatha Harkness finds herself powerless after a suspicious goth teen helps break her free.', rating: 7.5, releaseDate: '2024-09-18', poster: null, backdrop: null },
 ];
 
-// 2. DCEU Saga (Verified Movie & TV Series IDs)
 const DCEU_ITEMS: CollectionItem[] = [
   { id: 49521, title: 'Man of Steel', type: 'movie', overview: 'Clark Kent discovers his alien origin and superpowers.', rating: 6.6, releaseDate: '2013-06-12', poster: null, backdrop: null },
   { id: 209112, title: 'Batman v Superman: Dawn of Justice', type: 'movie', overview: 'Batman takes on Superman while a new threat arises.', rating: 5.9, releaseDate: '2016-03-23', poster: null, backdrop: null },
@@ -99,7 +97,6 @@ const DCEU_ITEMS: CollectionItem[] = [
   { id: 194764, title: 'The Penguin', type: 'series', overview: 'Oz Cobb makes his move to take control of Gotham City following the events of The Batman.', rating: 8.6, releaseDate: '2024-09-19', poster: null, backdrop: null },
 ];
 
-// 3. Star Wars Saga
 const STAR_WARS_ITEMS: CollectionItem[] = [
   { id: 1893, title: 'Star Wars: Episode I - The Phantom Menace', type: 'movie', overview: 'Jedi Knights rescue Queen Amidala.', rating: 6.5, releaseDate: '1999-05-19', poster: null, backdrop: null },
   { id: 1894, title: 'Star Wars: Episode II - Attack of the Clones', type: 'movie', overview: 'Anakin Skywalker protects Padmé Amidala.', rating: 6.5, releaseDate: '2002-05-15', poster: null, backdrop: null },
@@ -119,7 +116,6 @@ const STAR_WARS_ITEMS: CollectionItem[] = [
   { id: 114479, title: 'The Acolyte', type: 'series', overview: 'An investigation into a shocking crime spree pits a respected Jedi Master against a dangerous warrior.', rating: 5.2, releaseDate: '2024-06-04', poster: null, backdrop: null },
 ];
 
-// 4. Wizarding World
 const HARRY_POTTER_ITEMS: CollectionItem[] = [
   { id: 671, title: 'Harry Potter and the Sorcerer\'s Stone', type: 'movie', overview: 'Harry discovers he is a wizard and attends Hogwarts.', rating: 7.9, releaseDate: '2001-11-16', poster: null, backdrop: null },
   { id: 672, title: 'Harry Potter and the Chamber of Secrets', type: 'movie', overview: 'Harry returns for his second year and uncovers dark secrets.', rating: 7.7, releaseDate: '2002-11-13', poster: null, backdrop: null },
@@ -134,7 +130,6 @@ const HARRY_POTTER_ITEMS: CollectionItem[] = [
   { id: 338953, title: 'Fantastic Beasts: The Secrets of Dumbledore', type: 'movie', overview: 'Professor Albus Dumbledore knows Gellert Grindelwald is moving to seize control.', rating: 6.7, releaseDate: '2022-04-06', poster: null, backdrop: null },
 ];
 
-// 5. Fast & Furious
 const FAST_ITEMS: CollectionItem[] = [
   { id: 9799, title: 'The Fast and the Furious', type: 'movie', overview: 'Undercover cop Brian O\'Conner infiltrates street racing.', rating: 7.0, releaseDate: '2001-06-22', poster: null, backdrop: null },
   { id: 584, title: '2 Fast 2 Furious', type: 'movie', overview: 'Brian O\'Conner teams up with Roman Pearce in Miami.', rating: 6.5, releaseDate: '2003-06-05', poster: null, backdrop: null },
@@ -149,7 +144,6 @@ const FAST_ITEMS: CollectionItem[] = [
   { id: 385687, title: 'Fast X', type: 'movie', overview: 'Dom Toretto and his family are targeted by Dante Reyes.', rating: 7.2, releaseDate: '2023-05-17', poster: null, backdrop: null },
 ];
 
-// 6. Lord of the Rings & Middle-earth
 const LOTR_ITEMS: CollectionItem[] = [
   { id: 49051, title: 'The Hobbit: An Unexpected Journey', type: 'movie', overview: 'Bilbo Baggins embarks on a quest to reclaim the Dwarf Kingdom of Erebor.', rating: 7.3, releaseDate: '2012-11-26', poster: null, backdrop: null },
   { id: 57158, title: 'The Hobbit: The Desolation of Smaug', type: 'movie', overview: 'The Dwarves, Bilbo and Gandalf escape the Misty Mountains.', rating: 7.6, releaseDate: '2013-12-11', poster: null, backdrop: null },
@@ -214,7 +208,7 @@ const LOTR_COLLECTION: CollectionData = {
   movies: LOTR_ITEMS,
 };
 
-const ALL_COLLECTIONS: Record<string, CollectionData> = {
+export const ALL_COLLECTIONS: Record<string, CollectionData> = {
   '86311': MCU_COLLECTION,
   '209131': DCEU_COLLECTION,
   '10': STAR_WARS_COLLECTION,
@@ -249,7 +243,6 @@ export const getCollectionById = async (req: Request, res: Response): Promise<vo
 
     const data = ALL_COLLECTIONS[collectionId] || MCU_COLLECTION;
 
-    // Dynamically fetch & enrich item posters cleanly from TMDB with explicit mediaType
     const enrichedMoviesPromises = data.movies.map(async (item) => {
       try {
         const mediaType = item.type === 'series' ? 'tv' : 'movie';
@@ -277,7 +270,6 @@ export const getCollectionById = async (req: Request, res: Response): Promise<vo
 
     const enrichedMovies = await Promise.all(enrichedMoviesPromises);
 
-    // Filter by type: 'all' | 'movie' | 'series'
     let filteredMovies = enrichedMovies;
     if (filterType === 'movie') {
       filteredMovies = enrichedMovies.filter((m) => m.type === 'movie');
@@ -285,7 +277,6 @@ export const getCollectionById = async (req: Request, res: Response): Promise<vo
       filteredMovies = enrichedMovies.filter((m) => m.type === 'series');
     }
 
-    // Sort in strict chronological order by releaseDate
     const sortedMovies = [...filteredMovies].sort((a, b) => {
       const dateA = a.releaseDate ? new Date(a.releaseDate).getTime() : 0;
       const dateB = b.releaseDate ? new Date(b.releaseDate).getTime() : 0;

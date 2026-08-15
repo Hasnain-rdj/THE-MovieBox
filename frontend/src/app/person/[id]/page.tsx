@@ -4,7 +4,7 @@ import { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { API_BASE_URL } from "@/config";
+import { PERSON_API_URL } from "@/config";
 import { ArrowLeft, Calendar, MapPin, Film, Star, User as UserIcon } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -50,7 +50,7 @@ export default function PersonDetailsPage({ params }: { params: Promise<{ id: st
   useEffect(() => {
     if (!personId) return;
     setLoading(true);
-    fetch(`${API_BASE_URL}/person/${personId}`)
+    fetch(`${PERSON_API_URL}/${personId}`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch actor details");
         return res.json();
@@ -88,9 +88,12 @@ export default function PersonDetailsPage({ params }: { params: Promise<{ id: st
     return (
       <div className="min-h-screen bg-[#0d0f12] text-white flex flex-col items-center justify-center gap-4">
         <p className="text-red-400 font-bold">{error || "Actor not found"}</p>
-        <Link href="/" className="px-5 py-2 rounded-full bg-zinc-800 text-xs font-bold hover:bg-zinc-700">
-          Back to Dashboard
-        </Link>
+        <button
+          onClick={() => router.back()}
+          className="px-5 py-2 rounded-full bg-zinc-800 text-xs font-bold hover:bg-zinc-700 cursor-pointer"
+        >
+          Go Back
+        </button>
       </div>
     );
   }
@@ -100,14 +103,14 @@ export default function PersonDetailsPage({ params }: { params: Promise<{ id: st
       <Navbar user={user} onLogout={handleLogout} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-        {/* Back Button */}
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-xs font-bold text-zinc-400 hover:text-white transition-colors bg-zinc-900/80 border border-zinc-800 px-4 py-2 rounded-full"
+        {/* Smart Back Button */}
+        <button
+          onClick={() => router.back()}
+          className="inline-flex items-center gap-2 text-xs font-bold text-zinc-400 hover:text-white transition-colors bg-zinc-900/80 border border-zinc-800 px-4 py-2 rounded-full cursor-pointer hover:border-zinc-700"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Dashboard</span>
-        </Link>
+          <span>Back</span>
+        </button>
 
         {/* Actor Header Info Card */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 bg-zinc-900/70 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl items-start">

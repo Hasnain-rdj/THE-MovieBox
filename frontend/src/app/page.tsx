@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { API_BASE_URL } from "@/config";
+import { AUTH_API_URL, MOVIE_API_URL } from "@/config";
 import HeroBanner, { Movie } from "@/components/HeroBanner";
 import GenrePills from "@/components/GenrePills";
 import MovieGrid from "@/components/MovieGrid";
 import AuthModal from "@/components/AuthModal";
-import { Film, ShieldCheck, Sparkles, User as UserIcon, Lock, Mail, CheckCircle2, ShieldAlert } from "lucide-react";
+import { Film, ShieldCheck, Sparkles, User as UserIcon, Lock, Mail, CheckCircle2, ShieldAlert, Eye, EyeOff } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface User {
@@ -17,13 +18,17 @@ interface User {
   role: string;
 }
 
-export default function Home() {
+function HomeContent() {
+  const searchParams = useSearchParams();
+  const initialQuery = searchParams.get("query") || "";
+  const initialGenre = searchParams.get("genre") || "all";
+
   const [user, setUser] = useState<User | null>(null);
   const [checkingAuth, setCheckingAuth] = useState<boolean>(true);
 
-  // Dashboard states
-  const [searchQuery, setSearchQuery] = useState<string>("");
-  const [selectedGenre, setSelectedGenre] = useState<string>("all");
+  // Dashboard states initialized from URL params for search persistence
+  const [searchQuery, setSearchQuery] = useState<string>(initialQuery);
+  const [selectedGenre, setSelectedGenre] = useState<string>(initialGenre);
   const [trendingMovies, setTrendingMovies] = useState<Movie[]>([]);
   const [filteredMovies, setFilteredMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -33,20 +38,36 @@ export default function Home() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [role, setRole] = useState<"User" | "Admin">("User");
+
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [authSuccess, setAuthSuccess] = useState<string | null>(null);
 
-  // Check Auth on Mount
+  // Check Auth on Mount & validate token expiration
   useEffect(() => {
     const savedUser = localStorage.getItem("moviebox_user");
     const token = localStorage.getItem("moviebox_token");
 
     if (savedUser && token) {
       try {
-        setUser(JSON.parse(savedUser));
-      } catch (e) {}
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
+          localStorage.removeItem("moviebox_user");
+          localStorage.removeItem("moviebox_token");
+          setUser(null);
+        } else {
+          setUser(JSON.parse(savedUser));
+        }
+      } catch (e) {
+        localStorage.removeItem("moviebox_user");
+        localStorage.removeItem("moviebox_token");
+        setUser(null);
+      }
     }
     setCheckingAuth(false);
   }, []);
@@ -56,7 +77,7 @@ export default function Home() {
     if (!user) return;
 
     setLoading(true);
-    fetch(`${API_BASE_URL}/movies/trending`)
+    fetch(`${MOVIE_API_URL}/trending`)
       .then((res) => res.json())
       .then((data) => {
         if (data.results) {
@@ -71,6 +92,14 @@ export default function Home() {
   // Search & Genre Filtering
   useEffect(() => {
     if (!user) return;
+
+    // Sync search query and genre with URL parameters so browser back button restores state
+    const urlParams = new URLSearchParams();
+    if (searchQuery) urlParams.set("query", searchQuery);
+    if (selectedGenre !== "all") urlParams.set("genre", selectedGenre);
+    const newUrl = urlParams.toString() ? `/?${urlParams.toString()}` : "/";
+    window.history.replaceState(null, "", newUrl);
+
     if (!searchQuery && selectedGenre === "all") {
       setFilteredMovies(trendingMovies);
       return;
@@ -81,7 +110,7 @@ export default function Home() {
     if (searchQuery) params.append("query", searchQuery);
     if (selectedGenre !== "all") params.append("genre", selectedGenre);
 
-    fetch(`${API_BASE_URL}/movies/search?${params.toString()}`)
+    fetch(`${MOVIE_API_URL}/search?${params.toString()}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.results) {
@@ -98,10 +127,16 @@ export default function Home() {
     setAuthError(null);
     setAuthSuccess(null);
 
+    if (authMode === "register" && password !== confirmPassword) {
+      setAuthError("Passwords do not match. Please check and try again.");
+      setAuthLoading(false);
+      return;
+    }
+
     const endpoint =
       authMode === "login"
-        ? `${API_BASE_URL}/auth/login`
-        : `${API_BASE_URL}/auth/register`;
+        ? `${AUTH_API_URL}/login`
+        : `${AUTH_API_URL}/register`;
 
     const body =
       authMode === "login"
@@ -305,15 +340,48 @@ export default function Home() {
                 <div className="relative">
                   <Lock className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3" />
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 pl-10 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-500"
+                    className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-500"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3.5 top-3 text-zinc-500 hover:text-white transition-colors cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
+
+              {authMode === "register" && (
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-400 mb-1.5">
+                    Confirm Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-zinc-500 absolute left-3.5 top-3" />
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-2.5 pl-10 pr-10 text-xs text-white placeholder-zinc-600 focus:outline-none focus:border-yellow-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3.5 top-3 text-zinc-500 hover:text-white transition-colors cursor-pointer"
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {authMode === "register" && (
                 <div>
@@ -425,5 +493,17 @@ export default function Home() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0d0f12] text-white flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }

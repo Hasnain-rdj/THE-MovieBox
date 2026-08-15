@@ -13,6 +13,7 @@ export interface Movie {
   poster: string | null;
   backdrop: string | null;
   overview?: string;
+  mediaType?: string;
 }
 
 interface HeroBannerProps {
@@ -43,7 +44,7 @@ export default function HeroBanner({
   return (
     <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-6 my-6">
       {/* Main Big Featured Banner (8 Cols) */}
-      <Link href={`/movie/${featuredMovie.id}`} className="lg:col-span-8">
+      <Link href={`/movie/${featuredMovie.id}${featuredMovie.mediaType === 'tv' ? '?type=tv' : ''}`} className="lg:col-span-8">
         <motion.div
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
@@ -118,7 +119,7 @@ export default function HeroBanner({
 
         <div className="flex flex-col gap-3">
           {sideMovies.slice(0, 3).map((movie, idx) => (
-            <Link key={movie.id || idx} href={`/movie/${movie.id}`}>
+            <Link key={movie.id || idx} href={`/movie/${movie.id}${movie.mediaType === 'tv' ? '?type=tv' : ''}`}>
               <motion.div
                 whileHover={{ x: 4 }}
                 className="flex items-center gap-4 p-2.5 rounded-2xl bg-zinc-900/60 hover:bg-zinc-800/80 border border-zinc-800/60 transition-all cursor-pointer group"

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { API_BASE_URL } from "@/config";
+import { COLLECTION_API_URL } from "@/config";
 import { Layers, Calendar, Star, Play, Sparkles, Film, Tv } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -37,10 +37,15 @@ const COLLECTIONS_LIST = [
   { id: "119", name: "Lord of the Rings Saga", key: "lotr" },
 ];
 
-export default function CollectionsPage() {
+function CollectionsContent() {
   const router = useRouter();
-  const [selectedId, setSelectedId] = useState<string>("86311");
-  const [filterType, setFilterType] = useState<"all" | "movie" | "series">("all");
+  const searchParams = useSearchParams();
+
+  const initialId = searchParams.get("id") || "86311";
+  const initialFilter = (searchParams.get("filter") as "all" | "movie" | "series") || "all";
+
+  const [selectedId, setSelectedId] = useState<string>(initialId);
+  const [filterType, setFilterType] = useState<"all" | "movie" | "series">(initialFilter);
   const [collection, setCollection] = useState<CollectionData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [user, setUser] = useState<any>(null);
@@ -55,8 +60,14 @@ export default function CollectionsPage() {
   }, []);
 
   useEffect(() => {
+    window.history.replaceState(
+      null,
+      "",
+      `/collections?id=${selectedId}&filter=${filterType}`
+    );
+
     setLoading(true);
-    fetch(`${API_BASE_URL}/collections/${selectedId}?type=${filterType}`)
+    fetch(`${COLLECTION_API_URL}/${selectedId}?type=${filterType}`)
       .then((res) => res.json())
       .then((data: CollectionData) => {
         setCollection(data);
@@ -190,7 +201,7 @@ export default function CollectionsPage() {
         {collection && (
           <section className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
             {collection.movies.map((item, idx) => (
-              <Link key={item.id} href={`/movie/${item.id}`}>
+              <Link key={item.id} href={`/movie/${item.id}?type=${item.type === "series" ? "tv" : "movie"}`}>
                 <motion.div
                   whileHover={{ y: -6, scale: 1.02 }}
                   className="group cursor-pointer flex flex-col gap-2 relative"
@@ -248,5 +259,17 @@ export default function CollectionsPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function CollectionsPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0d0f12] text-white flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+      </div>
+    }>
+      <CollectionsContent />
+    </Suspense>
   );
 }

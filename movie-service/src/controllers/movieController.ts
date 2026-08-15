@@ -17,6 +17,7 @@ export const getTrending = async (req: Request, res: Response): Promise<void> =>
       rating: movie.vote_average,
       voteCount: movie.vote_count,
       releaseDate: movie.release_date || movie.first_air_date,
+      mediaType: movie.media_type || (movie.first_air_date ? 'tv' : 'movie'),
       poster: movie.poster_path
         ? movie.poster_path.startsWith('http')
           ? movie.poster_path
@@ -54,6 +55,7 @@ export const searchMovies = async (req: Request, res: Response): Promise<void> =
       rating: movie.vote_average,
       voteCount: movie.vote_count,
       releaseDate: movie.release_date || movie.first_air_date,
+      mediaType: movie.media_type || (movie.first_air_date ? 'tv' : 'movie'),
       poster: movie.poster_path
         ? movie.poster_path.startsWith('http')
           ? movie.poster_path
@@ -90,7 +92,6 @@ export const getMovieDetails = async (req: Request, res: Response): Promise<void
       return;
     }
 
-    // Leverage multi-source fallback with MongoDB Caching & mediaType
     const payload = await fetchMovieWithMultiSourceFallback(id, undefined, mediaType);
     res.status(200).json(payload);
   } catch (error: any) {

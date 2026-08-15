@@ -31,3 +31,15 @@ export const authenticateJWT = (
     res.status(403).json({ message: 'Invalid or expired token.' });
   }
 };
+
+export const requireAdmin = (
+  req: AuthRequest,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (req.user?.role !== 'Admin') {
+    res.status(403).json({ message: 'Forbidden: Admin access required.' });
+    return;
+  }
+  next();
+};

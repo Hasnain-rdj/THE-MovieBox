@@ -1,24 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { API_BASE_URL } from "@/config";
+import { MOVIE_API_URL } from "@/config";
 import { X, Star, Calendar, Users, Film, AlertCircle } from "lucide-react";
 import { Movie } from "./HeroBanner";
 
-interface MovieDetails {
-  id: number;
-  title: string;
-  overview: string;
-  rating: number;
-  voteCount: number;
-  releaseDate: string;
-  genres: string[];
-  poster: string | null;
-  backdrop: string | null;
-  actors: { id: number; name: string; character: string; profilePath: string | null }[];
-  images: string[];
-  trailerKey: string | null;
-  trailerUrl: string | null;
+interface MovieDetails extends Movie {
+  trailerKey?: string | null;
+  trailerUrl?: string | null;
+  genres?: string[];
+  actors?: { id: number; name: string; character: string; profilePath: string | null }[];
 }
 
 interface TrailerModalProps {
@@ -38,7 +29,7 @@ export default function TrailerModal({ movie, onClose }: TrailerModalProps) {
     setError(null);
     setDetails(null);
 
-    fetch(`${API_BASE_URL}/movies/${movie.id}`)
+    fetch(`${MOVIE_API_URL}/${movie.id}`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to load movie details");
         return res.json();
@@ -126,7 +117,7 @@ export default function TrailerModal({ movie, onClose }: TrailerModalProps) {
                     <Calendar className="w-3.5 h-3.5" />
                     {details.releaseDate || "N/A"}
                   </span>
-                  {details.genres.map((genre, idx) => (
+                  {details.genres?.map((genre: string, idx: number) => (
                     <span
                       key={idx}
                       className="bg-zinc-800/80 text-zinc-300 px-2.5 py-0.5 rounded-full border border-zinc-700/50"

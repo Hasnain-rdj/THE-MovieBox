@@ -5,6 +5,7 @@ export interface IUser extends Document {
   email: string;
   password: string;
   role: 'Admin' | 'User';
+  avatarUrl?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,6 +32,10 @@ const UserSchema: Schema = new Schema(
       type: String,
       enum: ['Admin', 'User'],
       default: 'User',
+    },
+    avatarUrl: {
+      type: String,
+      default: '',
     },
   },
   {

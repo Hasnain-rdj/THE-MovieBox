@@ -13,7 +13,7 @@ export default function MovieCard({ movie }: MovieCardProps) {
   const formattedRating = movie.rating ? movie.rating.toFixed(1) : "4.8";
 
   return (
-    <Link href={`/movie/${movie.id}`}>
+    <Link href={`/movie/${movie.id}${movie.mediaType === 'tv' ? '?type=tv' : ''}`}>
       <motion.div
         whileHover={{ y: -6, scale: 1.02 }}
         transition={{ type: "spring", stiffness: 300, damping: 20 }}

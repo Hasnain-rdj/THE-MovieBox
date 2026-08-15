@@ -23,7 +23,6 @@ const FavoriteSchema: Schema = new Schema(
   }
 );
 
-// Prevent duplicate favorite entries for the same user and movie
 FavoriteSchema.index({ userId: 1, tmdbMovieId: 1 }, { unique: true });
 
 export default mongoose.model<IFavorite>('Favorite', FavoriteSchema);
