@@ -5,10 +5,6 @@ pipeline {
         nodejs 'Node20'
     }
 
-    environment {
-        NODE_ENV = 'production'
-    }
-
     stages {
         stage('Checkout') {
             steps {
@@ -21,7 +17,7 @@ pipeline {
             steps {
                 echo 'Building and Testing Auth Service...'
                 dir('auth-service') {
-                    sh 'npm install'
+                    sh 'npm install --include=dev'
                     sh 'npm run build'
                     sh 'npm test'
                 }
@@ -32,7 +28,7 @@ pipeline {
             steps {
                 echo 'Building and Testing Movie Service...'
                 dir('movie-service') {
-                    sh 'npm install'
+                    sh 'npm install --include=dev'
                     sh 'npm run build'
                     sh 'npm test'
                 }
@@ -43,7 +39,7 @@ pipeline {
             steps {
                 echo 'Building Next.js Frontend Application...'
                 dir('frontend') {
-                    sh 'npm install'
+                    sh 'npm install --include=dev'
                     sh 'npm run build'
                 }
             }
