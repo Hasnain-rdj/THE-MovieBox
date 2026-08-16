@@ -36,25 +36,25 @@ export default function Navbar({
 
   return (
     <>
-      {/* Top Header Navbar */}
-      <header className="sticky top-0 z-40 w-full bg-[#0d0f12]/90 backdrop-blur-xl border-b border-zinc-800/80 px-4 md:px-8 py-3 flex items-center justify-between transition-all">
+      {/* Top Header Navbar - Optimized for Mobile, Tablet & Desktop */}
+      <header className="sticky top-0 z-40 w-full bg-[#0d0f12]/95 backdrop-blur-xl border-b border-zinc-800/80 px-3 sm:px-6 lg:px-8 py-3 flex items-center justify-between transition-all">
         {/* Brand Logo */}
-        <Link href="/" className="flex items-center gap-2.5 cursor-pointer group shrink-0">
-          <div className="w-8 h-8 md:w-9 md:h-9 rounded-xl bg-gradient-to-tr from-yellow-500 to-amber-300 flex items-center justify-center shadow-lg shadow-yellow-500/20 group-hover:scale-105 transition-transform">
-            <Film className="w-4 h-4 md:w-5 md:h-5 text-black stroke-[2.5]" />
+        <Link href="/" className="flex items-center gap-2 sm:gap-2.5 cursor-pointer group shrink-0">
+          <div className="w-7 h-7 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-yellow-500 to-amber-300 flex items-center justify-center shadow-lg shadow-yellow-500/20 group-hover:scale-105 transition-transform">
+            <Film className="w-3.5 h-3.5 sm:w-5 sm:h-5 text-black stroke-[2.5]" />
           </div>
           <div className="flex flex-col">
-            <span className="font-extrabold text-xs md:text-base tracking-[0.2em] text-white uppercase leading-none">
+            <span className="font-extrabold text-xs sm:text-base tracking-wider text-white uppercase leading-none">
               MOVIE<span className="text-yellow-400">BOX</span>
             </span>
-            <span className="text-[8px] md:text-[9px] tracking-widest text-zinc-500 font-semibold uppercase">
+            <span className="hidden sm:block text-[9px] tracking-widest text-zinc-500 font-semibold uppercase">
               DEV PLATFORM
             </span>
           </div>
         </Link>
 
-        {/* Center Desktop Nav Links */}
-        <nav className="hidden md:flex items-center gap-8">
+        {/* Center Desktop Nav Links (Visible on Large Screens >= 1024px) */}
+        <nav className="hidden lg:flex items-center gap-8">
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
@@ -77,8 +77,8 @@ export default function Navbar({
           })}
         </nav>
 
-        {/* Right Action Icons & Search */}
-        <div className="flex items-center gap-2 sm:gap-4">
+        {/* Right Action Icons & Search (Always aligned without overflow) */}
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0">
           {/* Search Bar */}
           {onSearchChange && (
             <div className="relative flex items-center">
@@ -88,7 +88,7 @@ export default function Navbar({
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder="Search..."
-                className="bg-zinc-900/90 text-xs text-white placeholder-zinc-500 pl-8 pr-3 py-1.5 rounded-full border border-zinc-800 focus:outline-none focus:border-yellow-500/60 focus:ring-1 focus:ring-yellow-500/50 w-28 sm:w-56 transition-all"
+                className="bg-zinc-900/90 text-xs text-white placeholder-zinc-500 pl-8 pr-3 py-1.5 rounded-full border border-zinc-800 focus:outline-none focus:border-yellow-500/60 w-24 sm:w-48 lg:w-56 transition-all"
               />
             </div>
           )}
@@ -106,7 +106,7 @@ export default function Navbar({
 
           {/* User Auth Profile Badge */}
           {user && (
-            <div className="flex items-center gap-2 bg-zinc-900/90 border border-zinc-800/90 pl-1 pr-2.5 py-1 rounded-full shadow-md">
+            <div className="flex items-center gap-1.5 sm:gap-2 bg-zinc-900/90 border border-zinc-800/90 p-0.5 sm:pl-1 sm:pr-2.5 sm:py-1 rounded-full shadow-md shrink-0">
               <Link href="/profile" className="flex items-center gap-2 group cursor-pointer">
                 <div className="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-yellow-400 to-amber-600 flex items-center justify-center font-bold text-xs text-black shadow-sm overflow-hidden shrink-0 border border-yellow-400/50">
                   {user.avatarUrl ? (
@@ -140,8 +140,8 @@ export default function Navbar({
         </div>
       </header>
 
-      {/* Mobile Bottom Navigation Bar (Android & Mobile Optimized) */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0d0f12]/95 backdrop-blur-2xl border-t border-zinc-800/90 px-3 py-2 flex items-center justify-around shadow-2xl">
+      {/* Mobile & Tablet Bottom Navigation Bar (Active for < 1024px Screens) */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#0d0f12]/98 backdrop-blur-2xl border-t border-zinc-800/90 px-3 py-2 flex items-center justify-around shadow-2xl">
         {navLinks.map((link) => {
           const Icon = link.icon;
           const isActive = pathname === link.href;
@@ -150,7 +150,7 @@ export default function Navbar({
             <Link
               key={link.href}
               href={link.href}
-              className={`flex flex-col items-center gap-1 text-[10px] font-bold tracking-wider transition-all py-1 px-3 rounded-xl ${
+              className={`flex flex-col items-center gap-0.5 text-[10px] font-bold tracking-wider transition-all py-1 px-3 rounded-xl ${
                 isActive ? "text-yellow-400 bg-yellow-400/10" : "text-zinc-400 hover:text-zinc-200"
               }`}
             >

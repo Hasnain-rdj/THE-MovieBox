@@ -455,7 +455,7 @@ function HomeContent() {
         onSearchChange={setSearchQuery}
       />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-24 md:pb-8 flex flex-col gap-4">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-24 lg:pb-8 flex flex-col gap-4">
         {/* Featured Hero Section */}
         {searchQuery === "" && selectedGenre === "all" && (
           <HeroBanner

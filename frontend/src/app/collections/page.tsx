@@ -137,7 +137,7 @@ function CollectionsContent() {
     <div className="min-h-screen bg-[#0d0f12] text-white font-sans">
       <Navbar user={user} onLogout={handleLogout} />
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-24 md:pb-8 space-y-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-24 lg:pb-8 space-y-8">
         {/* Title Header */}
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
