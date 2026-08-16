@@ -230,6 +230,9 @@ export const getCollectionsList = async (_req: Request, res: Response): Promise<
   res.status(200).json(FEATURED_COLLECTIONS);
 };
 
+const collectionCache = new Map<string, { data: any; timestamp: number }>();
+const COLLECTION_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour cache
+
 export const getCollectionById = async (req: Request, res: Response): Promise<void> => {
   try {
     const rawId = req.params.id;
@@ -241,12 +244,26 @@ export const getCollectionById = async (req: Request, res: Response): Promise<vo
       return;
     }
 
+    const cacheKey = `${collectionId}_${filterType}`;
+    const cached = collectionCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < COLLECTION_CACHE_TTL_MS) {
+      res.status(200).json(cached.data);
+      return;
+    }
+
     const data = ALL_COLLECTIONS[collectionId] || MCU_COLLECTION;
 
+    // Enrich items in parallel with 1s timeout guard per item
     const enrichedMoviesPromises = data.movies.map(async (item) => {
       try {
         const mediaType = item.type === 'series' ? 'tv' : 'movie';
-        const tmdbDetails = await getTMDBMovieDetails(item.id, mediaType);
+        // Fast timeout race to prevent hanging external network calls
+        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 800));
+        const tmdbDetails: any = await Promise.race([
+          getTMDBMovieDetails(item.id, mediaType),
+          timeoutPromise,
+        ]);
+
         const resolvedPoster = tmdbDetails?.poster_path || tmdbDetails?.poster;
         if (tmdbDetails) {
           return {
@@ -283,10 +300,14 @@ export const getCollectionById = async (req: Request, res: Response): Promise<vo
       return dateA - dateB;
     });
 
-    res.status(200).json({
+    const responsePayload = {
       ...data,
       movies: sortedMovies,
-    });
+    };
+
+    collectionCache.set(cacheKey, { data: responsePayload, timestamp: Date.now() });
+
+    res.status(200).json(responsePayload);
   } catch (error: any) {
     console.error('Error fetching collection details:', error.message);
     res.status(500).json({ message: 'Failed to fetch collection details', error: error.message });

@@ -50,18 +50,45 @@ export default function FavoritesPage() {
       return;
     }
 
+    // 1. Instant Cache Load from Session Storage (0ms instant display)
+    const cachedFavs = sessionStorage.getItem("moviebox_cached_favorites");
+    if (cachedFavs) {
+      try {
+        const parsed = JSON.parse(cachedFavs);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setFavorites(parsed);
+          setLoading(false);
+        }
+      } catch (err) {}
+    }
+
+    // 2. Fetch fresh favorites in background with 5s timeout safety
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
+
     fetch(`${FAVORITE_API_URL}`, {
       headers: { Authorization: `Bearer ${token}` },
+      signal: controller.signal,
     })
       .then((res) => (res.ok ? res.json() : []))
       .then((data: FavoriteMovie[]) => {
-        setFavorites(data);
+        clearTimeout(timeoutId);
+        if (Array.isArray(data)) {
+          setFavorites(data);
+          sessionStorage.setItem("moviebox_cached_favorites", JSON.stringify(data));
+        }
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Error loading favorites:", err);
+        clearTimeout(timeoutId);
+        console.warn("Favorites background fetch completed/timed out:", err.message);
         setLoading(false);
       });
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, [router]);
 
   const removeFav = async (movieId: number, e: React.MouseEvent) => {
@@ -71,12 +98,16 @@ export default function FavoritesPage() {
     const token = localStorage.getItem("moviebox_token");
     if (!token) return;
 
+    // Optimistically update UI and session storage immediately
+    const updated = favorites.filter((m) => m.id !== movieId);
+    setFavorites(updated);
+    sessionStorage.setItem("moviebox_cached_favorites", JSON.stringify(updated));
+
     try {
       await fetch(`${FAVORITE_API_URL}/${movieId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      setFavorites((prev) => prev.filter((m) => m.id !== movieId));
     } catch (err) {
       console.error("Failed to remove favorite:", err);
     }
@@ -86,6 +117,7 @@ export default function FavoritesPage() {
     setUser(null);
     localStorage.removeItem("moviebox_token");
     localStorage.removeItem("moviebox_user");
+    sessionStorage.removeItem("moviebox_cached_favorites");
     router.push("/");
   };
 

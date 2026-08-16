@@ -2,6 +2,7 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import client from 'prom-client';
 
 import movieRoutes from './routes/movieRoutes.js';
 import personRoutes from './routes/personRoutes.js';
@@ -9,6 +10,9 @@ import collectionRoutes from './routes/collectionRoutes.js';
 import favoriteRoutes from './routes/favoriteRoutes.js';
 
 dotenv.config();
+
+// Collect Prometheus default metrics
+client.collectDefaultMetrics();
 
 const app = express();
 app.use(cors());
@@ -25,6 +29,16 @@ if (MONGO_URI) {
 } else {
   console.warn('⚠️ MONGO_URI is not set in environment variables.');
 }
+
+// Prometheus Metrics Endpoint
+app.get('/metrics', async (_req, res) => {
+  try {
+    res.set('Content-Type', client.register.contentType);
+    res.send(await client.register.metrics());
+  } catch (err: any) {
+    res.status(500).end(err.message);
+  }
+});
 
 // Routes
 app.use('/api/movies', movieRoutes);

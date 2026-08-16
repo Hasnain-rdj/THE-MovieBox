@@ -79,17 +79,45 @@ function CollectionsContent() {
       `/collections?id=${selectedId}&filter=${filterType}`
     );
 
-    setLoading(true);
-    fetch(`${COLLECTION_API_URL}/${selectedId}?type=${filterType}`)
+    const cacheKey = `moviebox_collection_${selectedId}_${filterType}`;
+    const cachedCol = sessionStorage.getItem(cacheKey);
+
+    if (cachedCol) {
+      try {
+        const parsed = JSON.parse(cachedCol);
+        if (parsed && parsed.movies) {
+          setCollection(parsed);
+          setLoading(false);
+        }
+      } catch (err) {}
+    } else {
+      setLoading(true);
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
+
+    fetch(`${COLLECTION_API_URL}/${selectedId}?type=${filterType}`, {
+      signal: controller.signal,
+    })
       .then((res) => res.json())
       .then((data: CollectionData) => {
-        setCollection(data);
+        clearTimeout(timeoutId);
+        if (data && data.movies) {
+          setCollection(data);
+          sessionStorage.setItem(cacheKey, JSON.stringify(data));
+        }
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Failed to load collection:", err);
+        clearTimeout(timeoutId);
         setLoading(false);
       });
+
+    return () => {
+      clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, [selectedId, filterType]);
 
   const toggleFavorite = async (itemId: number, e: React.MouseEvent) => {

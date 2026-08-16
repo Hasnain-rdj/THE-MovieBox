@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  labels:
+    app: prometheus
+    app.kubernetes.io/name: prometheus
+    app.kubernetes.io/part-of: the-moviebox
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    scrape_configs:
+      - job_name: 'auth-service'
+        static_configs:
+          - targets: ['auth-service:5001']
+
+      - job_name: 'movie-service'
+        static_configs:
+          - targets: ['movie-service:5002']
