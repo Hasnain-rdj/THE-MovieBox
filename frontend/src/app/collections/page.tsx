@@ -85,7 +85,16 @@ function CollectionsContent() {
     if (cachedCol) {
       try {
         const parsed = JSON.parse(cachedCol);
-        if (parsed && parsed.movies) {
+        // Only use cache if all posters are valid full http URLs or null (not broken relative paths)
+        const hasValidPosters =
+          parsed &&
+          parsed.movies &&
+          parsed.movies.length > 0 &&
+          parsed.movies.every(
+            (m: any) => !m.poster || m.poster.startsWith("http")
+          );
+
+        if (hasValidPosters) {
           setCollection(parsed);
           setLoading(false);
         }
