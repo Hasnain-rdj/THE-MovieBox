@@ -27,20 +27,20 @@ spec:
             - name: PORT
               value: "3001"
             - name: NEXT_PUBLIC_AUTH_API_URL
-              value: "http://auth-service:5001/api/auth"
+              value: "http://localhost:5001/api/auth"
             - name: NEXT_PUBLIC_MOVIE_API_URL
-              value: "http://movie-service:5002/api/movies"
+              value: "http://localhost:5002/api/movies"
             - name: NEXT_PUBLIC_FAVORITE_API_URL
-              value: "http://movie-service:5002/api/favorites"
+              value: "http://localhost:5002/api/favorites"
             - name: NEXT_PUBLIC_COLLECTION_API_URL
-              value: "http://movie-service:5002/api/collections"
+              value: "http://localhost:5002/api/collections"
           resources:
             requests:
               memory: "256Mi"
-              cpu: "150m"
+              cpu: "250m"
             limits:
-              memory: "512Mi"
-              cpu: "500m"
+              memory: "1024Mi"
+              cpu: "1000m"
 ---
 apiVersion: v1
 kind: Service

@@ -144,14 +144,24 @@ export const searchTMDBMovies = async (query?: string, genreId?: string) => {
   }
 };
 
+const movieDetailsCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes cache
+
 export const getTMDBMovieDetails = async (
   movieId: string | number,
   mediaType?: 'movie' | 'tv' | 'series'
 ) => {
+  const cacheKey = `${movieId}_${mediaType || 'auto'}`;
+  const cached = movieDetailsCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return cached.data;
+  }
   try {
     const apiKey = getApiKey();
     const isExplicitTv = mediaType === 'tv' || mediaType === 'series';
     const isExplicitMovie = mediaType === 'movie';
+
+    let result: any = null;
 
     if (isExplicitTv) {
       const response = await tmdbClient.get(`/tv/${movieId}`, {
@@ -160,47 +170,46 @@ export const getTMDBMovieDetails = async (
           append_to_response: 'credits,videos,images,recommendations',
         },
       });
-      return { ...response.data, mediaType: 'tv' };
-    }
-
-    if (isExplicitMovie) {
+      result = { ...response.data, mediaType: 'tv' };
+    } else if (isExplicitMovie) {
       const response = await tmdbClient.get(`/movie/${movieId}`, {
         params: {
           api_key: apiKey,
           append_to_response: 'credits,videos,images,recommendations',
         },
       });
-      return { ...response.data, mediaType: 'movie' };
+      result = { ...response.data, mediaType: 'movie' };
+    } else {
+      const [movieRes, tvRes] = await Promise.allSettled([
+        tmdbClient.get(`/movie/${movieId}`, {
+          params: {
+            api_key: apiKey,
+            append_to_response: 'credits,videos,images,recommendations',
+          },
+        }),
+        tmdbClient.get(`/tv/${movieId}`, {
+          params: {
+            api_key: apiKey,
+            append_to_response: 'credits,videos,images,recommendations',
+          },
+        }),
+      ]);
+
+      const movieData = movieRes.status === 'fulfilled' ? movieRes.value.data : null;
+      const tvData = tvRes.status === 'fulfilled' ? tvRes.value.data : null;
+
+      if (movieData && !tvData) result = { ...movieData, mediaType: 'movie' };
+      else if (!movieData && tvData) result = { ...tvData, mediaType: 'tv' };
+      else if (movieData && tvData) {
+        const movieScore = (movieData.vote_count || 0) * (movieData.popularity || 1);
+        const tvScore = (tvData.vote_count || 0) * (tvData.popularity || 1);
+        result = tvScore > movieScore ? { ...tvData, mediaType: 'tv' } : { ...movieData, mediaType: 'movie' };
+      }
     }
 
-    const [movieRes, tvRes] = await Promise.allSettled([
-      tmdbClient.get(`/movie/${movieId}`, {
-        params: {
-          api_key: apiKey,
-          append_to_response: 'credits,videos,images,recommendations',
-        },
-      }),
-      tmdbClient.get(`/tv/${movieId}`, {
-        params: {
-          api_key: apiKey,
-          append_to_response: 'credits,videos,images,recommendations',
-        },
-      }),
-    ]);
-
-    const movieData = movieRes.status === 'fulfilled' ? movieRes.value.data : null;
-    const tvData = tvRes.status === 'fulfilled' ? tvRes.value.data : null;
-
-    if (movieData && !tvData) return { ...movieData, mediaType: 'movie' };
-    if (!movieData && tvData) return { ...tvData, mediaType: 'tv' };
-
-    if (movieData && tvData) {
-      const movieScore = (movieData.vote_count || 0) * (movieData.popularity || 1);
-      const tvScore = (tvData.vote_count || 0) * (tvData.popularity || 1);
-      if (tvScore > movieScore) {
-        return { ...tvData, mediaType: 'tv' };
-      }
-      return { ...movieData, mediaType: 'movie' };
+    if (result) {
+      movieDetailsCache.set(cacheKey, { data: result, timestamp: Date.now() });
+      return result;
     }
 
     throw new Error(`Media not found for ID ${movieId}`);
