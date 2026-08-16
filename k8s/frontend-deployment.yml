@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-deployment
+  labels:
+    app: frontend
+    app.kubernetes.io/name: frontend
+    app.kubernetes.io/part-of: the-moviebox
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+        - name: frontend
+          image: the-moviebox-frontend:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 3000
+              name: http
+          env:
+            - name: PORT
+              value: "3000"
+            - name: NEXT_PUBLIC_AUTH_API_URL
+              value: "http://auth-service:5001/api/auth"
+            - name: NEXT_PUBLIC_MOVIE_API_URL
+              value: "http://movie-service:5002/api/movies"
+            - name: NEXT_PUBLIC_FAVORITE_API_URL
+              value: "http://movie-service:5002/api/favorites"
+            - name: NEXT_PUBLIC_COLLECTION_API_URL
+              value: "http://movie-service:5002/api/collections"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "150m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+  labels:
+    app: frontend
+    app.kubernetes.io/name: frontend
+    app.kubernetes.io/part-of: the-moviebox
+spec:
+  type: LoadBalancer
+  selector:
+    app: frontend
+  ports:
+    - port: 3000
+      targetPort: 3000
+      name: http

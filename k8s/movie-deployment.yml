@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: movie-deployment
+  labels:
+    app: movie-service
+    app.kubernetes.io/name: movie-service
+    app.kubernetes.io/part-of: the-moviebox
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: movie-service
+  template:
+    metadata:
+      labels:
+        app: movie-service
+    spec:
+      containers:
+        - name: movie-service
+          image: the-moviebox-movie:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 5002
+              name: http
+          env:
+            - name: PORT
+              value: "5002"
+            - name: MONGO_URI
+              valueFrom:
+                secretKeyRef:
+                  name: moviebox-secrets
+                  key: MONGO_URI
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: moviebox-secrets
+                  key: JWT_SECRET
+            - name: TMDB_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: moviebox-secrets
+                  key: TMDB_API_KEY
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "250m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: movie-service
+  labels:
+    app: movie-service
+    app.kubernetes.io/name: movie-service
+    app.kubernetes.io/part-of: the-moviebox
+spec:
+  type: ClusterIP
+  selector:
+    app: movie-service
+  ports:
+    - port: 5002
+      targetPort: 5002
+      name: http

@@ -5,9 +5,9 @@ services:
       dockerfile: Dockerfile
     container_name: moviebox-frontend
     ports:
-      - "3001:3001"
+      - "3000:3000"
     environment:
-      - PORT=3001
+      - PORT=3000
       - NEXT_PUBLIC_AUTH_API_URL=http://localhost:5001/api/auth
       - NEXT_PUBLIC_MOVIE_API_URL=http://localhost:5002/api/movies
       - NEXT_PUBLIC_COLLECTION_API_URL=http://localhost:5002/api/collections

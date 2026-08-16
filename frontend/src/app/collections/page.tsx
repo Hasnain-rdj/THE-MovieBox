@@ -4,8 +4,8 @@ import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
-import { COLLECTION_API_URL } from "@/config";
-import { Layers, Calendar, Star, Play, Sparkles, Film, Tv } from "lucide-react";
+import { COLLECTION_API_URL, FAVORITE_API_URL } from "@/config";
+import { Layers, Calendar, Star, Play, Sparkles, Film, Tv, Heart } from "lucide-react";
 import { motion } from "framer-motion";
 
 interface CollectionItem {
@@ -49,13 +49,26 @@ function CollectionsContent() {
   const [collection, setCollection] = useState<CollectionData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [user, setUser] = useState<any>(null);
+  const [userFavIds, setUserFavIds] = useState<number[]>([]);
 
   useEffect(() => {
     const savedUser = localStorage.getItem("moviebox_user");
+    const token = localStorage.getItem("moviebox_token");
     if (savedUser) {
       try {
         setUser(JSON.parse(savedUser));
       } catch (e) {}
+    }
+
+    if (token) {
+      fetch(`${FAVORITE_API_URL}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+        .then((res) => (res.ok ? res.json() : []))
+        .then((favs: any[]) => {
+          setUserFavIds(favs.map((f) => f.id));
+        })
+        .catch(() => {});
     }
   }, []);
 
@@ -78,6 +91,40 @@ function CollectionsContent() {
         setLoading(false);
       });
   }, [selectedId, filterType]);
+
+  const toggleFavorite = async (itemId: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const token = localStorage.getItem("moviebox_token");
+    if (!token) {
+      alert("Please log in to add items to your favorites!");
+      return;
+    }
+
+    const isFav = userFavIds.includes(itemId);
+    try {
+      if (isFav) {
+        await fetch(`${FAVORITE_API_URL}/${itemId}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUserFavIds((prev) => prev.filter((id) => id !== itemId));
+      } else {
+        await fetch(`${FAVORITE_API_URL}`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ tmdbMovieId: Number(itemId) }),
+        });
+        setUserFavIds((prev) => [...prev, itemId]);
+      }
+    } catch (err) {
+      console.error("Failed to toggle favorite:", err);
+    }
+  };
 
   const handleLogout = () => {
     setUser(null);
@@ -112,7 +159,7 @@ function CollectionsContent() {
               <button
                 key={col.id}
                 onClick={() => setSelectedId(col.id)}
-                className={`px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border ${
+                className={`px-5 py-2.5 rounded-full text-xs font-bold whitespace-nowrap transition-all border cursor-pointer ${
                   isActive
                     ? "bg-yellow-400 text-black border-yellow-400 shadow-lg shadow-yellow-400/20 scale-105"
                     : "bg-zinc-900/80 text-zinc-300 border-zinc-800 hover:border-zinc-700 hover:text-white"
@@ -164,7 +211,7 @@ function CollectionsContent() {
           <div className="flex items-center gap-2 bg-zinc-900/90 border border-zinc-800 p-1 rounded-full">
             <button
               onClick={() => setFilterType("all")}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                 filterType === "all"
                   ? "bg-yellow-400 text-black shadow-md"
                   : "text-zinc-400 hover:text-white"
@@ -174,7 +221,7 @@ function CollectionsContent() {
             </button>
             <button
               onClick={() => setFilterType("movie")}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                 filterType === "movie"
                   ? "bg-yellow-400 text-black shadow-md"
                   : "text-zinc-400 hover:text-white"
@@ -185,7 +232,7 @@ function CollectionsContent() {
             </button>
             <button
               onClick={() => setFilterType("series")}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all ${
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
                 filterType === "series"
                   ? "bg-yellow-400 text-black shadow-md"
                   : "text-zinc-400 hover:text-white"
@@ -200,61 +247,72 @@ function CollectionsContent() {
         {/* Chronological Grid */}
         {collection && (
           <section className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
-            {collection.movies.map((item, idx) => (
-              <Link key={item.id} href={`/movie/${item.id}?type=${item.type === "series" ? "tv" : "movie"}`}>
-                <motion.div
-                  whileHover={{ y: -6, scale: 1.02 }}
-                  className="group cursor-pointer flex flex-col gap-2 relative"
-                >
-                  <div className="relative aspect-[2/3] w-full rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800 group-hover:border-yellow-500/50 transition-all shadow-md">
-                    <img
-                      src={
-                        item.poster ||
-                        "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?q=80&w=400"
-                      }
-                      alt={item.title}
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src =
-                          "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?q=80&w=400";
-                      }}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
+            {collection.movies.map((item, idx) => {
+              const isFav = userFavIds.includes(item.id);
+              return (
+                <Link key={item.id} href={`/movie/${item.id}?type=${item.type === "series" ? "tv" : "movie"}`}>
+                  <motion.div
+                    whileHover={{ y: -6, scale: 1.02 }}
+                    className="group cursor-pointer flex flex-col gap-2 relative"
+                  >
+                    <div className="relative aspect-[2/3] w-full rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-800 group-hover:border-yellow-500/50 transition-all shadow-md">
+                      <img
+                        src={
+                          item.poster ||
+                          "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?q=80&w=400"
+                        }
+                        alt={item.title}
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            "https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?q=80&w=400";
+                        }}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
 
-                    {/* Order Index Badge */}
-                    <div className="absolute top-2.5 left-2.5 bg-yellow-400 text-black font-black text-xs w-6 h-6 rounded-full flex items-center justify-center shadow-md">
-                      {idx + 1}
-                    </div>
+                      {/* Order Index Badge */}
+                      <div className="absolute top-2.5 left-2.5 bg-yellow-400 text-black font-black text-xs w-6 h-6 rounded-full flex items-center justify-center shadow-md z-10">
+                        {idx + 1}
+                      </div>
 
-                    {/* Type Badge (Movie vs Series) */}
-                    <div className="absolute top-2.5 right-2.5 bg-black/70 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-                      {item.type === "series" ? "TV Series" : "Movie"}
-                    </div>
+                      {/* Quick Favorite Heart Button */}
+                      <button
+                        onClick={(e) => toggleFavorite(item.id, e)}
+                        title={isFav ? "Remove from favorites" : "Add to favorites"}
+                        className={`absolute top-2.5 right-2.5 z-20 w-8 h-8 rounded-full border flex items-center justify-center transition-all cursor-pointer shadow-md ${
+                          isFav
+                            ? "bg-red-500 text-white border-red-400 shadow-red-500/30 scale-105"
+                            : "bg-black/60 backdrop-blur-md text-zinc-300 border-white/20 hover:text-red-400 hover:bg-black/80"
+                        }`}
+                      >
+                        <Heart className={`w-4 h-4 ${isFav ? "fill-white" : ""}`} />
+                      </button>
 
-                    {/* Play Hover Overlay */}
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <div className="w-10 h-10 rounded-full bg-yellow-400 text-black flex items-center justify-center shadow-xl">
-                        <Play className="w-5 h-5 fill-current ml-0.5" />
+                      {/* Play Hover Overlay */}
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <div className="w-10 h-10 rounded-full bg-yellow-400 text-black flex items-center justify-center shadow-xl">
+                          <Play className="w-5 h-5 fill-current ml-0.5" />
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <h4 className="text-xs font-bold text-white group-hover:text-yellow-400 transition-colors truncate">
-                    {item.title}
-                  </h4>
+                    <h4 className="text-xs font-bold text-white group-hover:text-yellow-400 transition-colors truncate">
+                      {item.title}
+                    </h4>
 
-                  <div className="flex items-center justify-between text-[11px] text-zinc-400">
-                    <span className="flex items-center gap-1 text-yellow-400 font-semibold">
-                      <Star className="w-3 h-3 fill-yellow-400" />
-                      {item.rating ? item.rating.toFixed(1) : "N/A"}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      {item.releaseDate ? item.releaseDate.split("-")[0] : "N/A"}
-                    </span>
-                  </div>
-                </motion.div>
-              </Link>
-            ))}
+                    <div className="flex items-center justify-between text-[11px] text-zinc-400">
+                      <span className="flex items-center gap-1 text-yellow-400 font-semibold">
+                        <Star className="w-3 h-3 fill-yellow-400" />
+                        {item.rating ? item.rating.toFixed(1) : "N/A"}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Calendar className="w-3 h-3" />
+                        {item.releaseDate ? item.releaseDate.split("-")[0] : "N/A"}
+                      </span>
+                    </div>
+                  </motion.div>
+                </Link>
+              );
+            })}
           </section>
         )}
       </main>

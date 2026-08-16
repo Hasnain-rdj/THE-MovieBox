@@ -86,6 +86,7 @@ export const getFavorites = async (req: AuthRequest, res: Response): Promise<voi
           rating: details.vote_average,
           releaseDate: details.release_date || details.first_air_date,
           overview: details.overview,
+          mediaType: details.first_air_date ? 'series' : 'movie',
         };
       } catch (err) {
         return null;
