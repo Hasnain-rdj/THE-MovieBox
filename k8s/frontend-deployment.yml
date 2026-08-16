@@ -21,11 +21,11 @@ spec:
           image: the-moviebox-frontend:latest
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 3000
+            - containerPort: 3001
               name: http
           env:
             - name: PORT
-              value: "3000"
+              value: "3001"
             - name: NEXT_PUBLIC_AUTH_API_URL
               value: "http://auth-service:5001/api/auth"
             - name: NEXT_PUBLIC_MOVIE_API_URL
@@ -56,5 +56,5 @@ spec:
     app: frontend
   ports:
     - port: 3000
-      targetPort: 3000
+      targetPort: 3001
       name: http
