@@ -27,7 +27,7 @@ services:
       - "5001:5001"
     environment:
       - PORT=5001
-      - MONGO_URI=${MONGO_URI:-mongodb+srv://hasnain:3718@cluster0.arb20r6.mongodb.net/?appName=Cluster0}
+      - MONGO_URI=${MONGO_URI:-mongodb+srv://hasnain:1685@cluster0.arb20r6.mongodb.net/?appName=Cluster0}
       - JWT_SECRET=${JWT_SECRET:-9d097df9bb52b437e025bae9b17320dc72792f156db74866ea4ac7b3d7bc24ea}
     restart: always
 
@@ -40,7 +40,7 @@ services:
       - "5002:5002"
     environment:
       - PORT=5002
-      - MONGO_URI=${MONGO_URI:-mongodb+srv://hasnain:3718@cluster0.arb20r6.mongodb.net/?appName=Cluster0}
+      - MONGO_URI=${MONGO_URI:-mongodb+srv://hasnain:1685@cluster0.arb20r6.mongodb.net/?appName=Cluster0}
       - TMDB_API_KEY=${TMDB_API_KEY:-e0c2c693d80345a911fac92dbf1b27dd}
       - OMDB_API_KEY=${OMDB_API_KEY:-f4dc3b7f}
       - JWT_SECRET=${JWT_SECRET:-9d097df9bb52b437e025bae9b17320dc72792f156db74866ea4ac7b3d7bc24ea}
