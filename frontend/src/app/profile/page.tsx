@@ -305,7 +305,7 @@ function ProfileContent() {
     <div className="min-h-screen bg-[#0d0f12] text-white font-sans pb-12">
       <Navbar user={user} onLogout={handleLogout} />
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-24 md:pb-8 space-y-8">
         {/* Header Navigation & Badge */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-zinc-800/80 pb-6">
           <div className="flex items-center gap-4">
