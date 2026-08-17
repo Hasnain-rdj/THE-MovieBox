@@ -57,7 +57,15 @@ export default function MovieCard({ movie }: MovieCardProps) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ tmdbMovieId: Number(movie.id) }),
+          body: JSON.stringify({
+            tmdbMovieId: Number(movie.id),
+            title: movie.title,
+            poster: movie.poster_path || movie.poster,
+            rating: movie.vote_average || movie.rating,
+            releaseDate: movie.release_date || movie.releaseDate,
+            overview: movie.overview,
+            mediaType: movie.mediaType || "movie",
+          }),
         });
         setIsFavorite(true);
       }

@@ -119,7 +119,15 @@ function MovieDetailsContent({ params }: { params: Promise<{ id: string }> }) {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ tmdbMovieId: Number(movieId) }),
+          body: JSON.stringify({
+            tmdbMovieId: Number(movieId),
+            title: movie?.title || movie?.name,
+            poster: movie?.poster_path,
+            rating: movie?.vote_average,
+            releaseDate: movie?.release_date || movie?.first_air_date,
+            overview: movie?.overview,
+            mediaType: isTv ? "series" : "movie",
+          }),
         });
         setIsFavorite(true);
       }

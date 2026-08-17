@@ -56,7 +56,7 @@ export default function FavoritesPage() {
     if (cachedFavs) {
       try {
         const parsed = JSON.parse(cachedFavs);
-        if (Array.isArray(parsed)) {
+        if (Array.isArray(parsed) && parsed.length > 0) {
           setFavorites(parsed);
           setLoading(false);
           hasCache = true;
@@ -68,12 +68,16 @@ export default function FavoritesPage() {
       setLoading(true);
     }
 
-    // 2. Fetch fresh favorites in background with 15s timeout safety for Render cold-starts
+    // 2. Fetch fresh live favorites from database
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
+    const timeoutId = setTimeout(() => controller.abort(), 20000);
 
     fetch(`${FAVORITE_API_URL}`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Cache-Control": "no-cache, no-store, must-revalidate",
+        Pragma: "no-cache",
+      },
       signal: controller.signal,
     })
       .then((res) => (res.ok ? res.json() : []))
@@ -87,7 +91,7 @@ export default function FavoritesPage() {
       })
       .catch((err) => {
         clearTimeout(timeoutId);
-        console.warn("Favorites fetch completed/timed out:", err.message);
+        console.warn("Favorites fetch finished with note:", err.message);
         setLoading(false);
       });
 

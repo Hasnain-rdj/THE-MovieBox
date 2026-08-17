@@ -7,7 +7,7 @@ const IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 
 export const addFavorite = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
-    const { tmdbMovieId } = req.body;
+    const { tmdbMovieId, title, poster, rating, releaseDate, overview, mediaType } = req.body;
     const userId = req.user?.id;
 
     if (!tmdbMovieId || !userId) {
@@ -15,15 +15,46 @@ export const addFavorite = async (req: AuthRequest, res: Response): Promise<void
       return;
     }
 
-    const existingFav = await Favorite.findOne({ userId, tmdbMovieId });
+    const existingFav = await Favorite.findOne({ userId, tmdbMovieId: Number(tmdbMovieId) });
     if (existingFav) {
-      res.status(400).json({ message: 'Movie already added to favorites.' });
+      res.status(200).json({ message: 'Movie already in favorites', favorite: existingFav });
       return;
+    }
+
+    let movieData = {
+      title: title || '',
+      poster: poster || '',
+      rating: rating || 0,
+      releaseDate: releaseDate || '',
+      overview: overview || '',
+      mediaType: mediaType || 'movie',
+    };
+
+    // If metadata was not sent from client, fetch once from TMDB
+    if (!movieData.title) {
+      try {
+        const details = await getTMDBMovieDetails(Number(tmdbMovieId), mediaType);
+        movieData = {
+          title: details.title || details.name || 'Untitled',
+          poster: details.poster_path
+            ? details.poster_path.startsWith('http')
+              ? details.poster_path
+              : `${IMAGE_BASE_URL}${details.poster_path}`
+            : '',
+          rating: details.vote_average || 0,
+          releaseDate: details.release_date || details.first_air_date || '',
+          overview: details.overview || '',
+          mediaType: details.first_air_date ? 'series' : 'movie',
+        };
+      } catch (err) {
+        console.warn('TMDB fetch on addFavorite fallback used');
+      }
     }
 
     const favorite = await Favorite.create({
       userId,
-      tmdbMovieId,
+      tmdbMovieId: Number(tmdbMovieId),
+      ...movieData,
     });
 
     res.status(201).json({ message: 'Movie added to favorites successfully', favorite });
@@ -44,15 +75,10 @@ export const removeFavorite = async (req: AuthRequest, res: Response): Promise<v
       return;
     }
 
-    const deleted = await Favorite.findOneAndDelete({
+    await Favorite.findOneAndDelete({
       userId,
       tmdbMovieId: Number(tmdbMovieId),
     });
-
-    if (!deleted) {
-      res.status(404).json({ message: 'Favorite entry not found.' });
-      return;
-    }
 
     res.status(200).json({ message: 'Movie removed from favorites successfully' });
   } catch (error: any) {
@@ -70,9 +96,21 @@ export const getFavorites = async (req: AuthRequest, res: Response): Promise<voi
       return;
     }
 
-    const favRecords = await Favorite.find({ userId }).sort({ createdAt: -1 });
+    const favRecords = await Favorite.find({ userId }).sort({ createdAt: -1 }).lean();
 
-    const moviePromises = favRecords.map(async (fav) => {
+    const moviePromises = favRecords.map(async (fav: any) => {
+      if (fav.title && fav.poster) {
+        return {
+          id: fav.tmdbMovieId,
+          title: fav.title,
+          poster: fav.poster,
+          rating: fav.rating || 0,
+          releaseDate: fav.releaseDate || '',
+          overview: fav.overview || '',
+          mediaType: fav.mediaType || 'movie',
+        };
+      }
+
       try {
         const details = await getTMDBMovieDetails(fav.tmdbMovieId);
         return {
@@ -89,11 +127,19 @@ export const getFavorites = async (req: AuthRequest, res: Response): Promise<voi
           mediaType: details.first_air_date ? 'series' : 'movie',
         };
       } catch (err) {
-        return null;
+        return {
+          id: fav.tmdbMovieId,
+          title: fav.title || 'Movie',
+          poster: fav.poster || null,
+          rating: fav.rating || 0,
+          releaseDate: fav.releaseDate || '',
+          overview: fav.overview || '',
+          mediaType: fav.mediaType || 'movie',
+        };
       }
     });
 
-    const movies = (await Promise.all(moviePromises)).filter((m) => m !== null);
+    const movies = await Promise.all(moviePromises);
 
     res.status(200).json(movies);
   } catch (error: any) {

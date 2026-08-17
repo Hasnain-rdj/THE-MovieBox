@@ -147,14 +147,22 @@ function CollectionsContent() {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUserFavIds((prev) => prev.filter((id) => id !== itemId));
-      } else {
+        const foundItem = allMovies.find((m) => m.id === itemId);
         await fetch(`${FAVORITE_API_URL}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ tmdbMovieId: Number(itemId) }),
+          body: JSON.stringify({
+            tmdbMovieId: Number(itemId),
+            title: foundItem?.title,
+            poster: foundItem?.poster,
+            rating: foundItem?.rating,
+            releaseDate: foundItem?.releaseDate,
+            overview: foundItem?.overview,
+            mediaType: foundItem?.mediaType || "movie",
+          }),
         });
         setUserFavIds((prev) => [...prev, itemId]);
       }
