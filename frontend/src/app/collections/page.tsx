@@ -147,7 +147,8 @@ function CollectionsContent() {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUserFavIds((prev) => prev.filter((id) => id !== itemId));
-        const foundItem = allMovies.find((m) => m.id === itemId);
+      } else {
+        const foundItem = collection?.movies.find((m: CollectionItem) => m.id === itemId);
         await fetch(`${FAVORITE_API_URL}`, {
           method: "POST",
           headers: {

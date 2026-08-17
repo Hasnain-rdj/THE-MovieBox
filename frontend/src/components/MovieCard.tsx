@@ -60,9 +60,9 @@ export default function MovieCard({ movie }: MovieCardProps) {
           body: JSON.stringify({
             tmdbMovieId: Number(movie.id),
             title: movie.title,
-            poster: movie.poster_path || movie.poster,
-            rating: movie.vote_average || movie.rating,
-            releaseDate: movie.release_date || movie.releaseDate,
+            poster: movie.poster,
+            rating: movie.rating,
+            releaseDate: movie.releaseDate,
             overview: movie.overview,
             mediaType: movie.mediaType || "movie",
           }),
