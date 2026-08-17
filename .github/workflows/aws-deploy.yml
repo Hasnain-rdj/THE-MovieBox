@@ -21,7 +21,22 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
+            set -e
             echo "🚀 Starting Continuous Deployment for THE-MovieBox on AWS EC2..."
+
+            # Step 0: Ensure K3s Kubernetes cluster is running & configure kubeconfig
+            if ! command -v k3s &> /dev/null && [ ! -f /etc/rancher/k3s/k3s.yaml ]; then
+              echo "📦 Installing K3s Kubernetes Engine..."
+              curl -sfL https://get.k3s.io | sh -
+            fi
+
+            mkdir -p $HOME/.kube
+            if [ -f /etc/rancher/k3s/k3s.yaml ]; then
+              sudo cp /etc/rancher/k3s/k3s.yaml $HOME/.kube/config
+              sudo chown $(id -u):$(id -g) $HOME/.kube/config
+              chmod 600 $HOME/.kube/config
+            fi
+            export KUBECONFIG=$HOME/.kube/config
 
             # Step 1: Ensure project directory exists
             if [ ! -d "$HOME/THE-MovieBox" ]; then

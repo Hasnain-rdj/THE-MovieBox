@@ -380,9 +380,21 @@ resource "aws_instance" "app_node" {
               apt-get install -y docker.io curl git
               systemctl enable --now docker
               usermod -aG docker ubuntu
-              curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
-              install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
-              echo "THE-MovieBox Cloud Compute Node Provisioned!" > /tmp/readiness.txt
+
+              # Install K3s Lightweight Kubernetes Engine
+              curl -sfL https://get.k3s.io | sh -
+
+              # Configure kubeconfig permissions for ubuntu user
+              mkdir -p /home/ubuntu/.kube
+              cp /etc/rancher/k3s/k3s.yaml /home/ubuntu/.kube/config
+              chown -R ubuntu:ubuntu /home/ubuntu/.kube
+              chmod 600 /home/ubuntu/.kube/config
+
+              # Set KUBECONFIG environment variable
+              echo "export KUBECONFIG=/home/ubuntu/.kube/config" >> /home/ubuntu/.bashrc
+              echo "alias k='kubectl'" >> /home/ubuntu/.bashrc
+
+              echo "THE-MovieBox Cloud Compute Node & K3s Cluster Ready!" > /tmp/readiness.txt
               EOF
 
   tags = {
