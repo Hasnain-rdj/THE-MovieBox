@@ -123,6 +123,7 @@ function MovieDetailsContent({ params }: { params: Promise<{ id: string }> }) {
         });
         setIsFavorite(true);
       }
+      sessionStorage.removeItem("moviebox_cached_favorites");
     } catch (err) {
       console.error("Favorite toggle failed:", err);
     } finally {

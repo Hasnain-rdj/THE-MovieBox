@@ -52,19 +52,25 @@ export default function FavoritesPage() {
 
     // 1. Instant Cache Load from Session Storage (0ms instant display)
     const cachedFavs = sessionStorage.getItem("moviebox_cached_favorites");
+    let hasCache = false;
     if (cachedFavs) {
       try {
         const parsed = JSON.parse(cachedFavs);
-        if (Array.isArray(parsed) && parsed.length > 0) {
+        if (Array.isArray(parsed)) {
           setFavorites(parsed);
           setLoading(false);
+          hasCache = true;
         }
       } catch (err) {}
     }
 
-    // 2. Fetch fresh favorites in background with 5s timeout safety
+    if (!hasCache) {
+      setLoading(true);
+    }
+
+    // 2. Fetch fresh favorites in background with 15s timeout safety for Render cold-starts
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     fetch(`${FAVORITE_API_URL}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -81,7 +87,7 @@ export default function FavoritesPage() {
       })
       .catch((err) => {
         clearTimeout(timeoutId);
-        console.warn("Favorites background fetch completed/timed out:", err.message);
+        console.warn("Favorites fetch completed/timed out:", err.message);
         setLoading(false);
       });
 

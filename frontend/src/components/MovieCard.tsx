@@ -61,6 +61,7 @@ export default function MovieCard({ movie }: MovieCardProps) {
         });
         setIsFavorite(true);
       }
+      sessionStorage.removeItem("moviebox_cached_favorites");
     } catch (err) {
       console.error("Favorite toggle failed:", err);
     } finally {

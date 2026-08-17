@@ -158,6 +158,7 @@ function CollectionsContent() {
         });
         setUserFavIds((prev) => [...prev, itemId]);
       }
+      sessionStorage.removeItem("moviebox_cached_favorites");
     } catch (err) {
       console.error("Failed to toggle favorite:", err);
     }
