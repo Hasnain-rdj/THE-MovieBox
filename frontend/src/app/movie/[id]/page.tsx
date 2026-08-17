@@ -126,7 +126,7 @@ function MovieDetailsContent({ params }: { params: Promise<{ id: string }> }) {
             rating: movie?.rating,
             releaseDate: movie?.releaseDate,
             overview: movie?.overview,
-            mediaType: isTv ? "series" : "movie",
+            mediaType: mediaType === "tv" ? "series" : "movie",
           }),
         });
         setIsFavorite(true);

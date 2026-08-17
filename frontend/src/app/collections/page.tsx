@@ -12,6 +12,7 @@ interface CollectionItem {
   id: number;
   title: string;
   type: "movie" | "series";
+  mediaType?: string;
   overview: string;
   rating: number;
   releaseDate: string;
@@ -162,7 +163,7 @@ function CollectionsContent() {
             rating: foundItem?.rating,
             releaseDate: foundItem?.releaseDate,
             overview: foundItem?.overview,
-            mediaType: foundItem?.mediaType || "movie",
+            mediaType: foundItem?.mediaType || foundItem?.type || "movie",
           }),
         });
         setUserFavIds((prev) => [...prev, itemId]);
