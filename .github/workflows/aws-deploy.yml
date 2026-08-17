@@ -68,9 +68,11 @@ jobs:
               '  TMDB_API_KEY: "e0c2c693d80345a911fac92dbf1b27dd"' \
               '  OMDB_API_KEY: "f4dc3b7f"' > k8s/secrets.local.yml
 
-            # Step 4: Prune unused Docker build cache & rebuild Docker images for all microservices
-            echo "🧹 Cleaning up dangling Docker build cache and unused layers..."
-            sudo docker system prune -f || true
+            # Step 4: Aggressively reclaim disk space & rebuild Docker images for all microservices
+            echo "🧹 Aggressively reclaiming disk space on EC2 host..."
+            sudo docker system prune -af --volumes || true
+            sudo k3s crictl rmi --prune || true
+            sudo rm -rf /tmp/* /var/tmp/* || true
 
             echo "🐳 Building Docker images for auth-service, movie-service, and frontend..."
             sudo docker build -t the-moviebox-auth:latest ./auth-service
