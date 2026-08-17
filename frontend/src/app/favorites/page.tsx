@@ -8,9 +8,6 @@ import { FAVORITE_API_URL } from "@/config";
 import { Heart, Trash2, Star, Calendar, ArrowLeft, Film, Tv, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 
-// Force dynamic rendering & disable App Router caching
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
 
 interface FavoriteMovie {
   id: number;
