@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Search, Bell, MessageSquare, Film, LogOut, Heart, Layers, LayoutDashboard, User as UserIcon } from "lucide-react";
+import { Search, Film, LogOut, Heart, Layers, LayoutDashboard, User as UserIcon } from "lucide-react";
 
 interface User {
   id: string;
@@ -93,16 +93,6 @@ export default function Navbar({
             </div>
           )}
 
-          {/* Action Icons */}
-          <div className="hidden sm:flex items-center gap-3 border-l border-zinc-800 pl-4">
-            <button className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition-all relative">
-              <MessageSquare className="w-4 h-4" />
-            </button>
-            <button className="p-2 rounded-full text-zinc-400 hover:text-white hover:bg-zinc-800/60 transition-all relative">
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-yellow-400 rounded-full animate-pulse" />
-            </button>
-          </div>
 
           {/* User Auth Profile Badge */}
           {user && (
