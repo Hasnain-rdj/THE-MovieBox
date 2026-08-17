@@ -8,6 +8,7 @@ import { FAVORITE_API_URL } from "@/config";
 import { Heart, Trash2, Star, Calendar, ArrowLeft, Film, Tv, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
 
+// Force dynamic rendering & disable App Router caching
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
@@ -38,6 +39,7 @@ export default function FavoritesPage() {
       return;
     }
 
+    // Safe Base64-URL JWT validation
     try {
       const base64Url = token.split(".")[1];
       if (base64Url) {
@@ -52,13 +54,14 @@ export default function FavoritesPage() {
       }
       setUser(JSON.parse(savedUser));
     } catch (e) {
-      console.warn("Token validation parse note:", e);
+      console.warn("Token parse warning:", e);
     }
 
     if (isManualRefresh) setRefreshing(true);
     else setLoading(true);
 
     try {
+      // Force direct no-cache fetch from backend
       const res = await fetch(`${FAVORITE_API_URL}`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -93,7 +96,7 @@ export default function FavoritesPage() {
     const token = localStorage.getItem("moviebox_token");
     if (!token) return;
 
-    // Optimistically update UI immediately
+    // Optimistic UI update
     const updated = favorites.filter((m) => m.id !== movieId);
     setFavorites(updated);
     sessionStorage.setItem("moviebox_cached_favorites", JSON.stringify(updated));
@@ -127,7 +130,7 @@ export default function FavoritesPage() {
       <Navbar user={user} onLogout={handleLogout} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-24 lg:pb-8 space-y-8">
-        {/* Title Header */}
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/30 flex items-center justify-center text-red-500">
@@ -141,9 +144,8 @@ export default function FavoritesPage() {
                 <button
                   onClick={() => fetchFavorites(true)}
                   title="Sync with database"
-                  className={`p-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-yellow-400 hover:border-yellow-500/40 transition-all cursor-pointer ${
-                    refreshing ? "animate-spin text-yellow-400" : ""
-                  }`}
+                  className={`p-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-yellow-400 hover:border-yellow-500/40 transition-all cursor-pointer ${refreshing ? "animate-spin text-yellow-400" : ""
+                    }`}
                 >
                   <RefreshCw className="w-3.5 h-3.5" />
                 </button>
@@ -163,7 +165,7 @@ export default function FavoritesPage() {
           </button>
         </div>
 
-        {/* Filter Controls (All / Movies / TV Series) */}
+        {/* Filter Controls */}
         <div className="flex items-center justify-between border-b border-zinc-800/80 pb-4">
           <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">
             Filter Favorites
@@ -172,32 +174,29 @@ export default function FavoritesPage() {
           <div className="flex items-center gap-2 bg-zinc-900/90 border border-zinc-800 p-1 rounded-full">
             <button
               onClick={() => setFilterType("all")}
-              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                filterType === "all"
-                  ? "bg-yellow-400 text-black shadow-md"
-                  : "text-zinc-400 hover:text-white"
-              }`}
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${filterType === "all"
+                ? "bg-yellow-400 text-black shadow-md"
+                : "text-zinc-400 hover:text-white"
+                }`}
             >
               All ({favorites.length})
             </button>
             <button
               onClick={() => setFilterType("movie")}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                filterType === "movie"
-                  ? "bg-yellow-400 text-black shadow-md"
-                  : "text-zinc-400 hover:text-white"
-              }`}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${filterType === "movie"
+                ? "bg-yellow-400 text-black shadow-md"
+                : "text-zinc-400 hover:text-white"
+                }`}
             >
               <Film className="w-3.5 h-3.5" />
               Movies ({favorites.filter((f) => f.mediaType === "movie" || !f.mediaType).length})
             </button>
             <button
               onClick={() => setFilterType("series")}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${
-                filterType === "series"
-                  ? "bg-yellow-400 text-black shadow-md"
-                  : "text-zinc-400 hover:text-white"
-              }`}
+              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer ${filterType === "series"
+                ? "bg-yellow-400 text-black shadow-md"
+                : "text-zinc-400 hover:text-white"
+                }`}
             >
               <Tv className="w-3.5 h-3.5" />
               TV Series ({favorites.filter((f) => f.mediaType === "series" || f.mediaType === "tv").length})
@@ -205,7 +204,7 @@ export default function FavoritesPage() {
           </div>
         </div>
 
-        {/* Favorites Grid */}
+        {/* Grid Display */}
         {loading ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
             {Array.from({ length: 5 }).map((_, idx) => (
@@ -254,7 +253,6 @@ export default function FavoritesPage() {
                         </div>
                       )}
 
-                      {/* Remove Favorite Button Top Right */}
                       <button
                         onClick={(e) => removeFav(movie.id, e)}
                         title="Remove from favorites"
@@ -263,7 +261,6 @@ export default function FavoritesPage() {
                         <Trash2 className="w-4 h-4" />
                       </button>
 
-                      {/* Media Type Badge Top Left */}
                       <div className="absolute top-2.5 left-2.5 bg-black/70 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
                         {isSeries ? "TV Series" : "Movie"}
                       </div>
