@@ -14,8 +14,7 @@ out/
 .env.development.local
 .env.test.local
 .env.production.local
-k8s/secrets.local.yml
-k8s/*.local.yml
+*.local.json
 
 # Logs & Temp
 npm-debug.log*
@@ -30,11 +29,3 @@ Thumbs.db
 .vscode/
 .gemini/
 /*.bat
-
-# Terraform
-.terraform/
-*.tfstate
-*.tfstate.*
-*.tfvars
-!*.tfvars.example
-*.pem
