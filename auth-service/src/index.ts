@@ -44,6 +44,10 @@ app.get('/api/health', (_req, res) => {
   res.json({ status: 'Auth Service is healthy and running!', service: 'auth-service', port: PORT });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Auth Service running on http://localhost:${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Auth Service running on http://localhost:${PORT}`);
+  });
+}
+
+export default app;

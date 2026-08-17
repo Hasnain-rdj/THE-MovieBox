@@ -1,0 +1,47 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "frontend/package.json",
+      "use": "@vercel/next"
+    },
+    {
+      "src": "auth-service/src/index.ts",
+      "use": "@vercel/node"
+    },
+    {
+      "src": "movie-service/src/index.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/auth/(.*)",
+      "dest": "auth-service/src/index.ts"
+    },
+    {
+      "src": "/api/movies/(.*)",
+      "dest": "movie-service/src/index.ts"
+    },
+    {
+      "src": "/api/collections/(.*)",
+      "dest": "movie-service/src/index.ts"
+    },
+    {
+      "src": "/api/favorites/(.*)",
+      "dest": "movie-service/src/index.ts"
+    },
+    {
+      "src": "/api/person/(.*)",
+      "dest": "movie-service/src/index.ts"
+    },
+    {
+      "src": "/api/health",
+      "dest": "auth-service/src/index.ts"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "frontend/$1"
+    }
+  ]
+}
