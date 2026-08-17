@@ -24,21 +24,21 @@ jobs:
             set -e
             echo "🚀 Starting Continuous Deployment for THE-MovieBox on AWS EC2..."
 
-            # Step 0: Ensure K3s Kubernetes cluster is running & configure kubeconfig
-            if ! command -v k3s &> /dev/null && [ ! -f /etc/rancher/k3s/k3s.yaml ]; then
-              echo "📦 Installing K3s Kubernetes Engine..."
+            # Step 0: Ensure K3s Kubernetes Engine is installed and active
+            if ! command -v k3s &> /dev/null; then
+              echo "📦 K3s not found. Installing lightweight Kubernetes engine..."
               curl -sfL https://get.k3s.io | sh -
+              sleep 10
             fi
 
-            mkdir -p $HOME/.kube
-            if [ -f /etc/rancher/k3s/k3s.yaml ]; then
-              sudo cp /etc/rancher/k3s/k3s.yaml $HOME/.kube/config
-              sudo chown $(id -u):$(id -g) $HOME/.kube/config
-              chmod 600 $HOME/.kube/config
-            fi
-            export KUBECONFIG=$HOME/.kube/config
+            # Wait for K3s Control Plane readiness
+            echo "⏳ Waiting for K3s cluster control plane to respond..."
+            until sudo k3s kubectl get nodes &> /dev/null; do
+              echo "Waiting for K3s API server..."
+              sleep 3
+            done
 
-            # Step 1: Ensure project directory exists
+            # Step 1: Ensure workspace repository directory exists
             if [ ! -d "$HOME/THE-MovieBox" ]; then
               echo "📥 Repository not found. Cloning repository into $HOME/THE-MovieBox..."
               git clone https://github.com/Hasnain-rdj/THE-MovieBox.git "$HOME/THE-MovieBox"
@@ -53,8 +53,7 @@ jobs:
 
             # Step 3: Securely generate k8s/secrets.local.yml on the EC2 server (NOT tracked in git)
             echo "🔒 Ensuring k8s/secrets.local.yml exists locally on EC2 host..."
-            if [ ! -f "k8s/secrets.local.yml" ]; then
-              cat <<'EOF' > k8s/secrets.local.yml
+            cat <<'EOF' > k8s/secrets.local.yml
 apiVersion: v1
 kind: Secret
 metadata:
@@ -69,36 +68,35 @@ stringData:
   TMDB_API_KEY: "e0c2c693d80345a911fac92dbf1b27dd"
   OMDB_API_KEY: "f4dc3b7f"
 EOF
-            fi
 
-            # Step 4: Rebuild Docker images for all microservices
+            # Step 4: Rebuild Docker images for all microservices using sudo docker
             echo "🐳 Building Docker images for auth-service, movie-service, and frontend..."
-            docker build -t the-moviebox-auth:latest ./auth-service
-            docker build -t the-moviebox-movie:latest ./movie-service
-            docker build -t the-moviebox-frontend:latest ./frontend
+            sudo docker build -t the-moviebox-auth:latest ./auth-service
+            sudo docker build -t the-moviebox-movie:latest ./movie-service
+            sudo docker build -t the-moviebox-frontend:latest ./frontend
 
-            # Step 5: Apply Kubernetes manifests
+            # Step 5: Apply Kubernetes manifests using sudo k3s kubectl
             echo "☸️ Applying Kubernetes manifests..."
-            kubectl apply -f k8s/secrets.local.yml \
-                          -f k8s/auth-deployment.yml \
-                          -f k8s/movie-deployment.yml \
-                          -f k8s/frontend-deployment.yml \
-                          -f k8s/monitoring/prometheus-config.yml \
-                          -f k8s/monitoring/prometheus-deployment.yml \
-                          -f k8s/monitoring/grafana-deployment.yml
+            sudo k3s kubectl apply -f k8s/secrets.local.yml \
+                                  -f k8s/auth-deployment.yml \
+                                  -f k8s/movie-deployment.yml \
+                                  -f k8s/frontend-deployment.yml \
+                                  -f k8s/monitoring/prometheus-config.yml \
+                                  -f k8s/monitoring/prometheus-deployment.yml \
+                                  -f k8s/monitoring/grafana-deployment.yml
 
             # Step 6: Force zero-downtime restart of all deployments
             echo "⚡ Triggering zero-downtime rollout restart..."
-            kubectl rollout restart deployment auth-deployment \
-                                               movie-deployment \
-                                               frontend-deployment \
-                                               prometheus-deployment \
-                                               grafana-deployment
+            sudo k3s kubectl rollout restart deployment auth-deployment \
+                                                       movie-deployment \
+                                                       frontend-deployment \
+                                                       prometheus-deployment \
+                                                       grafana-deployment
 
             # Step 7: Verify rollout status
             echo "🔍 Verifying rollout status for all deployments..."
-            kubectl rollout status deployment auth-deployment --timeout=120s
-            kubectl rollout status deployment movie-deployment --timeout=120s
-            kubectl rollout status deployment frontend-deployment --timeout=120s
+            sudo k3s kubectl rollout status deployment auth-deployment --timeout=120s
+            sudo k3s kubectl rollout status deployment movie-deployment --timeout=120s
+            sudo k3s kubectl rollout status deployment frontend-deployment --timeout=120s
 
             echo "✅ Continuous Deployment Completed Successfully!"
