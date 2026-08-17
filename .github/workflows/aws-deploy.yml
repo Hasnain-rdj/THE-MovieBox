@@ -24,6 +24,14 @@ jobs:
             set -e
             echo "🚀 Starting Continuous Deployment for THE-MovieBox on AWS EC2..."
 
+            # Step -1: Expand Linux filesystem to utilize full 30GB EBS volume capacity
+            echo "💾 Expanding Linux partition to fill 30GB EBS volume..."
+            sudo growpart /dev/sda 1 2>/dev/null || sudo growpart /dev/xvda 1 2>/dev/null || true
+            sudo resize2fs /dev/sda1 2>/dev/null || sudo resize2fs /dev/xvda1 2>/dev/null || true
+            sudo xfs_growfs / 2>/dev/null || true
+            echo "📊 Current Disk Space on EC2:"
+            df -h /
+
             # Step 0: Ensure K3s Kubernetes Engine is installed and active
             if ! command -v k3s &> /dev/null; then
               echo "📦 K3s not found. Installing lightweight Kubernetes engine with Docker integration..."
