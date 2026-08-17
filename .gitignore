@@ -30,3 +30,11 @@ Thumbs.db
 .vscode/
 .gemini/
 /*.bat
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+*.pem

@@ -1,0 +1,69 @@
+name: Continuous Deployment to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-to-ec2:
+    name: Deploy Microservices to AWS EC2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Execute Remote SSH Commands & Deploy to EC2
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USERNAME }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            echo "🚀 Starting Continuous Deployment for THE-MovieBox on AWS EC2..."
+
+            # Step 1: Ensure project directory exists
+            if [ ! -d "$HOME/THE-MovieBox" ]; then
+              echo "📥 Repository not found. Cloning repository into $HOME/THE-MovieBox..."
+              git clone https://github.com/Hasnain-rdj/THE-MovieBox.git "$HOME/THE-MovieBox"
+            fi
+
+            cd "$HOME/THE-MovieBox"
+
+            # Step 2: Fetch and pull latest code from main branch
+            echo "🔄 Fetching latest code from main branch..."
+            git fetch origin main
+            git reset --hard origin/main
+
+            # Step 3: Rebuild Docker images for all microservices
+            echo "🐳 Building Docker images for auth-service, movie-service, and frontend..."
+            docker build -t the-moviebox-auth:latest ./auth-service
+            docker build -t the-moviebox-movie:latest ./movie-service
+            docker build -t the-moviebox-frontend:latest ./frontend
+
+            # Step 4: Apply Kubernetes manifests
+            echo "☸️ Applying Kubernetes manifests..."
+            kubectl apply -f k8s/secrets.local.yml \
+                          -f k8s/auth-deployment.yml \
+                          -f k8s/movie-deployment.yml \
+                          -f k8s/frontend-deployment.yml \
+                          -f k8s/monitoring/prometheus-config.yml \
+                          -f k8s/monitoring/prometheus-deployment.yml \
+                          -f k8s/monitoring/grafana-deployment.yml
+
+            # Step 5: Force zero-downtime restart of all deployments
+            echo "⚡ Triggering zero-downtime rollout restart..."
+            kubectl rollout restart deployment auth-deployment \
+                                               movie-deployment \
+                                               frontend-deployment \
+                                               prometheus-deployment \
+                                               grafana-deployment
+
+            # Step 6: Verify rollout status
+            echo "🔍 Verifying rollout status for all deployments..."
+            kubectl rollout status deployment auth-deployment --timeout=120s
+            kubectl rollout status deployment movie-deployment --timeout=120s
+            kubectl rollout status deployment frontend-deployment --timeout=120s
+
+            echo "✅ Continuous Deployment Completed Successfully!"
