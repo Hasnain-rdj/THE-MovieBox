@@ -373,6 +373,12 @@ resource "aws_instance" "app_node" {
     aws_security_group.management_sg.id
   ]
 
+  root_block_device {
+    volume_size           = 30
+    volume_type           = "gp3"
+    delete_on_termination = true
+  }
+
   user_data = <<-EOF
               #!/bin/bash
               set -e
@@ -381,8 +387,8 @@ resource "aws_instance" "app_node" {
               systemctl enable --now docker
               usermod -aG docker ubuntu
 
-              # Install K3s Lightweight Kubernetes Engine
-              curl -sfL https://get.k3s.io | sh -
+              # Install K3s Lightweight Kubernetes Engine with Docker integration
+              curl -sfL https://get.k3s.io | sh -s - --docker
 
               # Configure kubeconfig permissions for ubuntu user
               mkdir -p /home/ubuntu/.kube
