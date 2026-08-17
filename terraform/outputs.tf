@@ -18,10 +18,6 @@ output "private_subnet_ids" {
   value       = aws_subnet.private[*].id
 }
 
-output "nat_gateway_ip" {
-  description = "Public Elastic IP assigned to the NAT Gateway."
-  value       = aws_eip.nat.public_ip
-}
 
 output "web_security_group_id" {
   description = "Security Group ID for Web Frontend and Load Balancer (ports 80, 443, 3000)."

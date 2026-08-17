@@ -35,9 +35,9 @@ variable "availability_zones" {
 }
 
 variable "instance_type" {
-  description = "EC2 instance type for cluster compute node hosting container workloads."
+  description = "EC2 instance type for cluster compute node (t2.micro for AWS Free Tier eligibility)."
   type        = string
-  default     = "t3.medium"
+  default     = "t2.micro"
 }
 
 variable "key_name" {

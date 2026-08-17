@@ -80,32 +80,8 @@ resource "aws_subnet" "private" {
 }
 
 # =============================================================================
-# 3. NAT Gateway, Elastic IP, and Route Tables
+# 3. Route Tables & Internet Access (100% Free Tier Compliant)
 # =============================================================================
-resource "aws_eip" "nat" {
-  domain     = "vpc"
-  depends_on = [aws_internet_gateway.gw]
-
-  tags = {
-    Name        = "the-moviebox-nat-eip-${var.environment}"
-    Environment = var.environment
-    Project     = "THE-MovieBox"
-    ManagedBy   = "Terraform"
-  }
-}
-
-resource "aws_nat_gateway" "nat" {
-  allocation_id = aws_eip.nat.id
-  subnet_id     = aws_subnet.public[0].id
-
-  tags = {
-    Name        = "the-moviebox-nat-gw-${var.environment}"
-    Environment = var.environment
-    Project     = "THE-MovieBox"
-    ManagedBy   = "Terraform"
-  }
-}
-
 # Public Route Table
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
@@ -129,13 +105,13 @@ resource "aws_route_table_association" "public" {
   route_table_id = aws_route_table.public.id
 }
 
-# Private Route Table
+# Private Route Table (Routed to IGW for $0 Free Tier Cost)
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
   route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat.id
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.gw.id
   }
 
   tags = {
@@ -375,7 +351,7 @@ resource "aws_instance" "app_node" {
 
   root_block_device {
     volume_size           = 30
-    volume_type           = "gp3"
+    volume_type           = "gp2"
     delete_on_termination = true
   }
 
