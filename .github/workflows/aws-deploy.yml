@@ -51,13 +51,33 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
 
-            # Step 3: Rebuild Docker images for all microservices
+            # Step 3: Securely generate k8s/secrets.local.yml on the EC2 server (NOT tracked in git)
+            echo "🔒 Ensuring k8s/secrets.local.yml exists locally on EC2 host..."
+            if [ ! -f "k8s/secrets.local.yml" ]; then
+              cat <<'EOF' > k8s/secrets.local.yml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: moviebox-secrets
+  labels:
+    app.kubernetes.io/name: moviebox-secrets
+    app.kubernetes.io/part-of: the-moviebox
+type: Opaque
+stringData:
+  MONGO_URI: "mongodb+srv://hasnain:1685@cluster0.arb20r6.mongodb.net/?appName=Cluster0"
+  JWT_SECRET: "9d097df9bb52b437e025bae9b17320dc72792f156db74866ea4ac7b3d7bc24ea"
+  TMDB_API_KEY: "e0c2c693d80345a911fac92dbf1b27dd"
+  OMDB_API_KEY: "f4dc3b7f"
+EOF
+            fi
+
+            # Step 4: Rebuild Docker images for all microservices
             echo "🐳 Building Docker images for auth-service, movie-service, and frontend..."
             docker build -t the-moviebox-auth:latest ./auth-service
             docker build -t the-moviebox-movie:latest ./movie-service
             docker build -t the-moviebox-frontend:latest ./frontend
 
-            # Step 4: Apply Kubernetes manifests
+            # Step 5: Apply Kubernetes manifests
             echo "☸️ Applying Kubernetes manifests..."
             kubectl apply -f k8s/secrets.local.yml \
                           -f k8s/auth-deployment.yml \
@@ -67,7 +87,7 @@ jobs:
                           -f k8s/monitoring/prometheus-deployment.yml \
                           -f k8s/monitoring/grafana-deployment.yml
 
-            # Step 5: Force zero-downtime restart of all deployments
+            # Step 6: Force zero-downtime restart of all deployments
             echo "⚡ Triggering zero-downtime rollout restart..."
             kubectl rollout restart deployment auth-deployment \
                                                movie-deployment \
@@ -75,7 +95,7 @@ jobs:
                                                prometheus-deployment \
                                                grafana-deployment
 
-            # Step 6: Verify rollout status
+            # Step 7: Verify rollout status
             echo "🔍 Verifying rollout status for all deployments..."
             kubectl rollout status deployment auth-deployment --timeout=120s
             kubectl rollout status deployment movie-deployment --timeout=120s
