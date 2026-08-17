@@ -53,21 +53,20 @@ jobs:
 
             # Step 3: Securely generate k8s/secrets.local.yml on the EC2 server (NOT tracked in git)
             echo "🔒 Ensuring k8s/secrets.local.yml exists locally on EC2 host..."
-            cat <<'EOF' > k8s/secrets.local.yml
-apiVersion: v1
-kind: Secret
-metadata:
-  name: moviebox-secrets
-  labels:
-    app.kubernetes.io/name: moviebox-secrets
-    app.kubernetes.io/part-of: the-moviebox
-type: Opaque
-stringData:
-  MONGO_URI: "mongodb+srv://hasnain:1685@cluster0.arb20r6.mongodb.net/?appName=Cluster0"
-  JWT_SECRET: "9d097df9bb52b437e025bae9b17320dc72792f156db74866ea4ac7b3d7bc24ea"
-  TMDB_API_KEY: "e0c2c693d80345a911fac92dbf1b27dd"
-  OMDB_API_KEY: "f4dc3b7f"
-EOF
+            printf '%s\n' \
+              'apiVersion: v1' \
+              'kind: Secret' \
+              'metadata:' \
+              '  name: moviebox-secrets' \
+              '  labels:' \
+              '    app.kubernetes.io/name: moviebox-secrets' \
+              '    app.kubernetes.io/part-of: the-moviebox' \
+              'type: Opaque' \
+              'stringData:' \
+              '  MONGO_URI: "mongodb+srv://hasnain:1685@cluster0.arb20r6.mongodb.net/?appName=Cluster0"' \
+              '  JWT_SECRET: "9d097df9bb52b437e025bae9b17320dc72792f156db74866ea4ac7b3d7bc24ea"' \
+              '  TMDB_API_KEY: "e0c2c693d80345a911fac92dbf1b27dd"' \
+              '  OMDB_API_KEY: "f4dc3b7f"' > k8s/secrets.local.yml
 
             # Step 4: Rebuild Docker images for all microservices using sudo docker
             echo "🐳 Building Docker images for auth-service, movie-service, and frontend..."
