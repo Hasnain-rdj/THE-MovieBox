@@ -1,12 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { FAVORITE_API_URL } from "@/config";
-import { Heart, Trash2, Star, Calendar, ArrowLeft, Film, Tv } from "lucide-react";
+import { Heart, Trash2, Star, Calendar, ArrowLeft, Film, Tv, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
+
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 interface FavoriteMovie {
   id: number;
@@ -23,9 +26,10 @@ export default function FavoritesPage() {
   const [favorites, setFavorites] = useState<FavoriteMovie[]>([]);
   const [filterType, setFilterType] = useState<"all" | "movie" | "series">("all");
   const [loading, setLoading] = useState<boolean>(true);
+  const [refreshing, setRefreshing] = useState<boolean>(false);
   const [user, setUser] = useState<any>(null);
 
-  useEffect(() => {
+  const fetchFavorites = useCallback(async (isManualRefresh = false) => {
     const savedUser = localStorage.getItem("moviebox_user");
     const token = localStorage.getItem("moviebox_token");
 
@@ -35,71 +39,52 @@ export default function FavoritesPage() {
     }
 
     try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      if (payload.exp && payload.exp * 1000 < Date.now()) {
-        localStorage.removeItem("moviebox_user");
-        localStorage.removeItem("moviebox_token");
-        router.push("/");
-        return;
+      const base64Url = token.split(".")[1];
+      if (base64Url) {
+        const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+        const payload = JSON.parse(window.atob(base64));
+        if (payload.exp && payload.exp * 1000 < Date.now()) {
+          localStorage.removeItem("moviebox_user");
+          localStorage.removeItem("moviebox_token");
+          router.push("/");
+          return;
+        }
       }
       setUser(JSON.parse(savedUser));
     } catch (e) {
-      localStorage.removeItem("moviebox_user");
-      localStorage.removeItem("moviebox_token");
-      router.push("/");
-      return;
+      console.warn("Token validation parse note:", e);
     }
 
-    // 1. Instant Cache Load from Session Storage (0ms instant display)
-    const cachedFavs = sessionStorage.getItem("moviebox_cached_favorites");
-    let hasCache = false;
-    if (cachedFavs) {
-      try {
-        const parsed = JSON.parse(cachedFavs);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setFavorites(parsed);
-          setLoading(false);
-          hasCache = true;
-        }
-      } catch (err) {}
-    }
+    if (isManualRefresh) setRefreshing(true);
+    else setLoading(true);
 
-    if (!hasCache) {
-      setLoading(true);
-    }
+    try {
+      const res = await fetch(`${FAVORITE_API_URL}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Cache-Control": "no-cache, no-store, must-revalidate",
+          Pragma: "no-cache",
+        },
+      });
 
-    // 2. Fetch fresh live favorites from database
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 20000);
-
-    fetch(`${FAVORITE_API_URL}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Cache-Control": "no-cache, no-store, must-revalidate",
-        Pragma: "no-cache",
-      },
-      signal: controller.signal,
-    })
-      .then((res) => (res.ok ? res.json() : []))
-      .then((data: FavoriteMovie[]) => {
-        clearTimeout(timeoutId);
+      if (res.ok) {
+        const data = await res.json();
         if (Array.isArray(data)) {
           setFavorites(data);
           sessionStorage.setItem("moviebox_cached_favorites", JSON.stringify(data));
         }
-        setLoading(false);
-      })
-      .catch((err) => {
-        clearTimeout(timeoutId);
-        console.warn("Favorites fetch finished with note:", err.message);
-        setLoading(false);
-      });
-
-    return () => {
-      clearTimeout(timeoutId);
-      controller.abort();
-    };
+      }
+    } catch (err: any) {
+      console.error("Failed to fetch favorites:", err);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, [router]);
+
+  useEffect(() => {
+    fetchFavorites();
+  }, [fetchFavorites]);
 
   const removeFav = async (movieId: number, e: React.MouseEvent) => {
     e.preventDefault();
@@ -108,7 +93,7 @@ export default function FavoritesPage() {
     const token = localStorage.getItem("moviebox_token");
     if (!token) return;
 
-    // Optimistically update UI and session storage immediately
+    // Optimistically update UI immediately
     const updated = favorites.filter((m) => m.id !== movieId);
     setFavorites(updated);
     sessionStorage.setItem("moviebox_cached_favorites", JSON.stringify(updated));
@@ -131,7 +116,6 @@ export default function FavoritesPage() {
     router.push("/");
   };
 
-  // Filtered favorites based on selected tab (All / Movies / Series)
   const filteredFavorites = favorites.filter((item) => {
     if (filterType === "all") return true;
     if (filterType === "series") return item.mediaType === "series" || item.mediaType === "tv";
@@ -150,9 +134,20 @@ export default function FavoritesPage() {
               <Heart className="w-5 h-5 fill-current" />
             </div>
             <div>
-              <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
-                My Favorite Collection
-              </h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-white">
+                  My Favorite Collection
+                </h1>
+                <button
+                  onClick={() => fetchFavorites(true)}
+                  title="Sync with database"
+                  className={`p-1.5 rounded-full bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-yellow-400 hover:border-yellow-500/40 transition-all cursor-pointer ${
+                    refreshing ? "animate-spin text-yellow-400" : ""
+                  }`}
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+              </div>
               <p className="text-xs text-zinc-400">
                 {favorites.length} titles saved in your personal collection
               </p>
@@ -194,7 +189,7 @@ export default function FavoritesPage() {
               }`}
             >
               <Film className="w-3.5 h-3.5" />
-              Movies ({favorites.filter(f => f.mediaType === "movie" || !f.mediaType).length})
+              Movies ({favorites.filter((f) => f.mediaType === "movie" || !f.mediaType).length})
             </button>
             <button
               onClick={() => setFilterType("series")}
@@ -205,7 +200,7 @@ export default function FavoritesPage() {
               }`}
             >
               <Tv className="w-3.5 h-3.5" />
-              TV Series ({favorites.filter(f => f.mediaType === "series" || f.mediaType === "tv").length})
+              TV Series ({favorites.filter((f) => f.mediaType === "series" || f.mediaType === "tv").length})
             </button>
           </div>
         </div>
